@@ -68,6 +68,16 @@ def saturationPlusValue(rgb):
     image_new = image_new*255
     cv2.imwrite("saturationPlusValue.jpg", image_new)
 
+# from Wang, Video smoke detection using shape, color, and dynamic features
+def inYCbCrColourSpace(bgr):
+    image_new = np.ones(bgr.shape[:2], dtype="uint8")
+    image_ycbcr = cv2.cvtColor(bgr, cv2.COLOR_BGR2YCR_CB)
+
+    image_new[:, :] =(image_ycbcr[:,:,1]>115) & (image_ycbcr[:,:,1]<141) & (image_ycbcr[:,:,2]>115) & (image_ycbcr[:,:,2]<141)
+    image_new = image_new*255
+    cv2.imwrite("inYCbCrColourSpace.jpg", image_new)
+
+
 
 image = cv2.imread('DJI_0843_frame00064.jpg')
 rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
@@ -75,4 +85,5 @@ gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)  # with grayscale
 # hls_image = cv2.cvtColor(image, cv2.COLOR_BGR2HLS) # or intensity?
 # lightness = hls_image[:,:,1]
 # testOne = grayPlusIntensity(rgb_image, gray)
-testTwo = saturationPlusValue(rgb_image)
+# testTwo = saturationPlusValue(rgb_image)
+testThree = inYCbCrColourSpace(image)
