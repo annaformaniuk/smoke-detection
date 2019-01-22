@@ -1,6 +1,8 @@
+import cv2
 import matplotlib.pyplot as plt
 import numpy as np
-import cv2
+np.seterr(divide='ignore', invalid='ignore')
+
 
 # to simply segment all the gray pixels
 def simpleGray(bgr):
@@ -17,6 +19,7 @@ def simpleGray(bgr):
     blur = cv2.GaussianBlur(result_white, (7, 7), 0)
     plt.imshow(blur)
     plt.show()
+
 
 # from Yu C., A real-time video fire flame and smoke detection algorithm
 def grayPlusIntensity(rgb, gray):
@@ -43,9 +46,33 @@ def grayPlusIntensity(rgb, gray):
     cv2.imwrite("end.jpg", image_new)
 
 
+# from Shafar, Early Smoke Detection on Video Using Wavelet Energy
+def saturationPlusValue(rgb):
+    image_new = np.ones(gray.shape[:2], dtype="uint8")
+    value = np.ones(gray.shape[:2], dtype="uint8")
+    value = rgb.max(axis=2)
+    minimum = rgb.min(axis=2)
+    dif = value-minimum
+    saturation = np.ones(gray.shape[:2], dtype="uint8")
+
+    saturation = np.nan_to_num(dif/value)
+    print(value)
+
+    counter0 = np.sum(value > 230)
+    counter1 = np.sum(saturation > 0.37)
+    counter2 = np.sum(np.bitwise_and(value > 0.64, saturation > 0.20))
+    print(counter0)
+    print(counter1)
+    print(counter2)
+    image_new[:, :] = (value > 230) & (saturation < 0.20)
+    image_new = image_new*255
+    cv2.imwrite("saturationPlusValue.jpg", image_new)
+
+
 image = cv2.imread('DJI_0843_frame00064.jpg')
 rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)  # with grayscale
 # hls_image = cv2.cvtColor(image, cv2.COLOR_BGR2HLS) # or intensity?
 # lightness = hls_image[:,:,1]
-testOne = grayPlusIntensity(rgb_image, gray)
+# testOne = grayPlusIntensity(rgb_image, gray)
+testTwo = saturationPlusValue(rgb_image)
