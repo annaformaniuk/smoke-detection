@@ -2,8 +2,24 @@ import matplotlib.pyplot as plt
 import numpy as np
 import cv2
 
+# to simply segment all the gray pixels
+def simpleGray(bgr):
+    hsv_image = cv2.cvtColor(brg, cv2.COLOR_BGR2HSV)
+    light_white = (0, 0, 200)
+    dark_white = (145, 60, 255)
+    mask_white = cv2.inRange(hsv_image, light_white, dark_white)
+    result_white = cv2.bitwise_and(rgb_image, rgb_image, mask=mask_white)
+
+    plt.subplot(1, 2, 1)
+    plt.imshow(mask_white, cmap="gray")
+    plt.subplot(1, 2, 2)
+
+    blur = cv2.GaussianBlur(result_white, (7, 7), 0)
+    plt.imshow(blur)
+    plt.show()
+
 # from Yu C., A real-time video fire flame and smoke detection algorithm
-def test(rgb, gray):
+def grayPlusIntensity(rgb, gray):
     image_new = np.ones(gray.shape[:2], dtype="uint8")
     m = np.ones(gray.shape[:2], dtype="uint8")
     n = np.ones(gray.shape[:2], dtype="uint8")
@@ -11,7 +27,7 @@ def test(rgb, gray):
 
     m = rgb.max(axis=2)
     n = rgb.min(axis=2)
-    i[:, :] = (rgb[:,:,0] + rgb[:,:,1] + rgb[:,:,2])/3
+    i[:, :] = (rgb[:, :, 0] + rgb[:, :, 1] + rgb[:, :, 2])/3
     cv2.imwrite("i.jpg", i)
     print(np.amax(i))
     print(i)
@@ -29,22 +45,7 @@ def test(rgb, gray):
 
 image = cv2.imread('DJI_0843_frame00064.jpg')
 rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) # with grayscale
+gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)  # with grayscale
 # hls_image = cv2.cvtColor(image, cv2.COLOR_BGR2HLS) # or intensity?
 # lightness = hls_image[:,:,1]
-test = test(rgb_image, gray)
-
-# #to simply segment all the grey pixels
-# light_white = (0, 0, 200)
-# dark_white = (145, 60, 255)
-# mask_white = cv2.inRange(hsv_image, light_white, dark_white)
-# result_white = cv2.bitwise_and(rgb_image, rgb_image, mask=mask_white)
-
-# plt.subplot(1, 2, 1)
-# plt.imshow(mask_white, cmap="gray")
-# plt.subplot(1, 2, 2)
-
-# blur = cv2.GaussianBlur(result_white, (7, 7), 0)
-
-# plt.imshow(blur)
-# plt.show()
+testOne = grayPlusIntensity(rgb_image, gray)
