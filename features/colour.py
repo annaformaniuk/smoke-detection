@@ -58,12 +58,6 @@ def saturationPlusValue(rgb):
     saturation = np.nan_to_num(dif/value)
     print(value)
 
-    counter0 = np.sum(value > 230)
-    counter1 = np.sum(saturation > 0.37)
-    counter2 = np.sum(np.bitwise_and(value > 0.64, saturation > 0.20))
-    print(counter0)
-    print(counter1)
-    print(counter2)
     image_new[:, :] = (value > 230) & (saturation < 0.20)
     image_new = image_new*255
     cv2.imwrite("saturationPlusValue.jpg", image_new)
