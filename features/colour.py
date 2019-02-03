@@ -6,18 +6,30 @@ np.seterr(divide='ignore', invalid='ignore')
 
 # to simply segment all the gray pixels
 def simpleGray(bgr):
-    hsv_image = cv2.cvtColor(brg, cv2.COLOR_BGR2HSV)
+    hsv_image = cv2.cvtColor(bgr, cv2.COLOR_BGR2HSV)
     light_white = (0, 0, 200)
     dark_white = (145, 60, 255)
     mask_white = cv2.inRange(hsv_image, light_white, dark_white)
     result_white = cv2.bitwise_and(rgb_image, rgb_image, mask=mask_white)
 
-    plt.subplot(1, 2, 1)
-    plt.imshow(mask_white, cmap="gray")
-    plt.subplot(1, 2, 2)
+    # plt.subplot(1, 2, 1)
+    # plt.imshow(mask_white, cmap="gray")
+    # plt.subplot(1, 2, 2)
 
-    blur = cv2.GaussianBlur(result_white, (7, 7), 0)
-    plt.imshow(blur)
+    # blur = cv2.GaussianBlur(result_white, (7, 7), 0)
+    # plt.imshow(blur)
+    # plt.show()
+
+    # Calculate histogram with mask and without mask
+    # Check third argument for mask
+    hist_full = cv2.calcHist([bgr], [0], None, [256], [0, 256])
+    hist_mask = cv2.calcHist([bgr], [0], mask_white, [256], [0, 256])
+
+    plt.subplot(221), plt.imshow(bgr, 'gray')
+    plt.subplot(222), plt.imshow(mask_white, 'gray')
+    plt.subplot(223), plt.imshow(result_white, 'gray')
+    plt.subplot(224), plt.plot(hist_full), plt.plot(hist_mask)
+    plt.xlim([0, 256])
     plt.show()
 
 
@@ -63,14 +75,16 @@ def saturationPlusValue(rgb):
     cv2.imwrite("saturationPlusValue.jpg", image_new)
 
 # from Wang, Video smoke detection using shape, color, and dynamic features
+
+
 def inYCbCrColourSpace(bgr):
     image_new = np.ones(bgr.shape[:2], dtype="uint8")
     image_ycbcr = cv2.cvtColor(bgr, cv2.COLOR_BGR2YCR_CB)
 
-    image_new[:, :] =(image_ycbcr[:,:,1]>115) & (image_ycbcr[:,:,1]<141) & (image_ycbcr[:,:,2]>115) & (image_ycbcr[:,:,2]<141)
+    image_new[:, :] = (image_ycbcr[:, :, 1] > 115) & (image_ycbcr[:, :, 1] < 141) & (
+        image_ycbcr[:, :, 2] > 115) & (image_ycbcr[:, :, 2] < 141)
     image_new = image_new*255
     cv2.imwrite("inYCbCrColourSpace.jpg", image_new)
-
 
 
 image = cv2.imread('DJI_0843_frame00064.jpg')
@@ -80,4 +94,5 @@ gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)  # with grayscale
 # lightness = hls_image[:,:,1]
 # testOne = grayPlusIntensity(rgb_image, gray)
 # testTwo = saturationPlusValue(rgb_image)
-testThree = inYCbCrColourSpace(image)
+# testThree = inYCbCrColourSpace(image)
+simpleGray(image)
