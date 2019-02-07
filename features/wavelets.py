@@ -3,6 +3,7 @@ import pywt
 import cv2
 import matplotlib.pyplot as plt
 from typing import List, Set, Dict, Tuple, Optional
+import scipy.interpolate as interp
 
 # get back to https://stackoverflow.com/questions/24536552/how-to-combine-pywavelet-and-opencv-for-image-processing
 
@@ -64,25 +65,38 @@ def three(img):
 
 def discrete(img):
     cap = cv2.VideoCapture(img)
-    while(cap.read()):
+    while(cap.isOpened()):
         ret, frame = cap.read()
         if ret==True:
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             global big_array, time_array, actual_data
 
-            actual_data.append(gray[300,250])
-            big_array.append(gray[300,250])
+            window = np.matrix(gray[300:325,300:325])
+    # # VISUALIZATION
+    #         cv2.imshow('frame', window)
+    #         if cv2.waitKey(1) & 0xFF == ord('q'):
+    #             break
+    # cap.release()
+    # cv2.destroyAllWindows()
+
+            # actual_data.append(gray[600,600])
+            big_array.append(window.mean())
             time_array.append(cap.get(0))
         else:
             break
 
-    print(big_array)
-    (cA, cD) = pywt.dwt(big_array, 'db1')
-    plt.plot(cA)
-    plt.plot(cD)
+    print(len(big_array))
+    print(len(time_array))
+    # (cA, cD) = pywt.dwt(big_array, 'db1') #Single level Discrete Wavelet Transform.
+    coeffs = pywt.wavedec(big_array, 'db1', level=2)
+    cA2, cD2, cD1 = coeffs
+    plt.plot(big_array)
+    #  to plot the cA and cD coefficients in time, just reduce time resolution by 2
+    asArray = np.array(big_array)
+    cD1_interpr = interp.interp1d(np.arange(cD1.size),cD1)
+    cD1_stretch = cD1_interpr(np.linspace(0,cD1.size-1,asArray.size))
+    plt.plot(cD1_stretch)
     plt.show()
-
-
 
 # w2d("DSC00654.jpg",'db1',5)
 # three("DSC00654.jpg")
