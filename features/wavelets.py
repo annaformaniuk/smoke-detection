@@ -63,7 +63,7 @@ def three(img):
     fig.tight_layout()
     plt.show()
 
-def discrete(img):
+def w1d(img):
     cap = cv2.VideoCapture(img)
     while(cap.isOpened()):
         ret, frame = cap.read()
@@ -98,7 +98,7 @@ def discrete(img):
     plt.plot(cD1_stretch)
     plt.show()
 
-# w2d("DSC00654.jpg",'db1',5)
-# three("DSC00654.jpg")
+w2d("images/DSC00654.jpg",'db1',9)
+# three("images/YUNC0025.jpg")
 # print(pywt.wavelist())
-discrete('DJI_0843.mp4')
+# w1d('images/DJI_0843.mp4')

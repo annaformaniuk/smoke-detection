@@ -1,18 +1,19 @@
 import cv2
 import numpy as np
 from matplotlib import pyplot as plt
+import imutils
 
-img = cv2.imread('YUNC0025_frame00636.jpg', 0)
+img = cv2.imread('images/DJI_0843_frame00064.jpg')
 
-# detecting edges
-edges = cv2.Canny(img,100,200)
+# # detecting edges
+# edges = cv2.Canny(img,100,200)
 
-plt.subplot(121),plt.imshow(img,cmap = 'gray')
-plt.title('Original Image'), plt.xticks([]), plt.yticks([])
-plt.subplot(122),plt.imshow(edges,cmap = 'gray')
-plt.title('Edge Image'), plt.xticks([]), plt.yticks([])
+# plt.subplot(121),plt.imshow(img,cmap = 'gray')
+# plt.title('Original Image'), plt.xticks([]), plt.yticks([])
+# plt.subplot(122),plt.imshow(edges,cmap = 'gray')
+# plt.title('Edge Image'), plt.xticks([]), plt.yticks([])
 
-plt.show()
+# plt.show()
 
 # # Fourier Transform
 # dft = cv2.dft(np.float32(img),flags = cv2.DFT_COMPLEX_OUTPUT)
@@ -43,3 +44,22 @@ plt.show()
 
 # plt.imshow(hist,interpolation = 'nearest')
 # plt.show()
+
+# shape
+lower = np.array([230, 230, 230])
+upper = np.array([255, 255, 255])
+shapeMask = cv2.inRange(img, lower, upper)
+
+# find the contours in the mask
+cnts = cv2.findContours(shapeMask.copy(), cv2.RETR_EXTERNAL,
+	cv2.CHAIN_APPROX_SIMPLE)
+cnts = imutils.grab_contours(cnts)
+print("I found {} white shapes".format(len(cnts)))
+cv2.imshow("Mask", shapeMask)
+ 
+# loop over the contours
+for c in cnts:
+	# draw the contour and show it
+	cv2.drawContours(img, [c], -1, (0, 255, 0), 2)
+	cv2.imshow("Image", img)
+	cv2.waitKey(0)

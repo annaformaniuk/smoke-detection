@@ -1,3 +1,5 @@
 .mypy_cache
 features/*.jpg
 features/*.mp4
+features/images/*.jpg
+features/images/*.mp4
