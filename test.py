@@ -8,6 +8,9 @@ fgbg = cv.createBackgroundSubtractorMOG2(
     history=500, varThreshold=50, detectShadows=False)
 while(1):
     ret, frame = cap.read()
+    if frame is None:
+        break
+
     fgmask = fgbg.apply(frame)
     fgmask = cv.morphologyEx(fgmask, cv.MORPH_OPEN, kernel)
     color = cv.bitwise_and(frame, frame, mask=fgmask)
