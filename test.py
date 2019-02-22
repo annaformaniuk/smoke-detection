@@ -2,7 +2,6 @@ import numpy as np
 import cv2 as cv
 import imutils
 
-
 cap = cv.VideoCapture('features/images/short.mp4')
 kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (6, 6))
 fgbg = cv.createBackgroundSubtractorMOG2(
@@ -25,6 +24,7 @@ while(1):
 
     if i == 100:
         # selecting the color pixels from the foreground
+        cv.imwrite("frame.jpg", frame) # visualization
         color = cv.bitwise_and(frame, frame, mask=fgmask)
         cv.imwrite("color.jpg", color) # visualization
 
@@ -39,22 +39,50 @@ while(1):
         # the pixels
         result_white = cv.bitwise_and(color, color, mask=mask_white)
         cv.imwrite("result_white.jpg", result_white) # visualization
-        # find the contours in the mask
-        cnts = cv.findContours(mask_white.copy(), cv.RETR_EXTERNAL,
+
+        # opening and closing
+        kernel = np.ones((13,13),np.uint8)
+        # opening = cv.morphologyEx(mask_white, cv.MORPH_OPEN, kernel)
+        # cv.imwrite("opening.jpg", opening) # visualization
+        closing = cv.morphologyEx(mask_white, cv.MORPH_CLOSE, kernel)
+        cv.imwrite("closing.jpg", closing) # visualization
+        # find the contours in the mask. Copying because it's destructive
+        cnts = cv.findContours(closing.copy(), cv.RETR_EXTERNAL,
                        cv.CHAIN_APPROX_SIMPLE)
         cnts = imutils.grab_contours(cnts)
         print("Found {} possible smoke clouds".format(len(cnts)))
-        cv.imshow("Mask", mask_white)
+        cv.imshow("Mask", closing)
 
         # loop over the contours
         for c in cnts:
             # draw the contour and show it
-            cv.drawContours(result_white, [c], -1, (0, 255, 0), 2)
-            cv.imshow("Image", result_white)
+            cv.drawContours(frame, [c], -1, (0, 255, 0), 2)
+            cv.imshow("Image", frame)
             cv.waitKey(0)
+
 
     # k = cv.waitKey(30) & 0xff
     # if k == 27:
     #         break
 cap.release()
 cv.destroyAllWindows()
+
+
+
+        # # Set up the detector with default parameters.
+        # detector = cv.SimpleBlobDetector_create()
+        
+        # # Detect blobs.
+        # keypoints = detector.detect(mask_white)
+        # print(len(keypoints))
+        
+        # # Draw detected blobs as red circles.
+        # # cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS ensures the size of the circle corresponds to the size of blob
+        # # im_with_keypoints = cv.drawKeypoints(result_white, keypoints, None, cv.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+        # img2 = mask_white.copy()
+        # for marker in keypoints:
+	    #     img2 = cv.drawMarker(img2, tuple(int(i) for i in marker.pt), color=(0, 255, 0))
+        
+        # # Show keypoints
+        # cv.imshow("Keypoints", img2)
+        # cv.waitKey(0)
