@@ -1,6 +1,59 @@
 import numpy as np
 import cv2 as cv
 import imutils
+from typing import List, Set, Dict, Tuple, Optional, Any
+
+
+# to simply segment all the gray pixels
+def simpleGray(bgr):
+    hsv_image = cv.cvtColor(bgr, cv.COLOR_BGR2HSV)
+    light_white = (0, 0, 200)
+    dark_white = (145, 60, 255)
+    mask_white = cv.inRange(hsv_image, light_white, dark_white)
+    
+    kernel = np.ones((3, 3), np.uint8)
+    opening = cv.morphologyEx(mask_white, cv.MORPH_OPEN, kernel)
+    cv.imwrite("opening_full.jpg", opening) # visualization
+    closing = cv.morphologyEx(opening, cv.MORPH_CLOSE, kernel)
+    cv.imwrite("closing_full.jpg", closing) # visualization
+
+    result_white = cv.bitwise_and(bgr, bgr, mask=closing)
+    cnts = cv.findContours(closing.copy(), cv.RETR_EXTERNAL,
+                           cv.CHAIN_APPROX_SIMPLE)
+    cnts = imutils.grab_contours(cnts)
+    cv.imwrite("mask_white.jpg", mask_white)
+    print("Found {} possible smoke clouds in the original image".format(len(cnts)))
+    # for latter search for intersections
+    better_format = []
+    for c in cnts:
+        single_contour = []
+        for point in c:
+            single_contour.append((point[0,0], point[0,1]))
+
+        better_format.append(single_contour)
+
+    return cnts, better_format
+
+# determine if a point is inside a given polygon or not
+# Polygon is a list of (x,y) pairs.
+def point_inside_polygon(x, y, poly):
+    n = len(poly)
+    inside = False
+
+    p1x, p1y = poly[0]
+    for i in range(n+1):
+        p2x, p2y = poly[i % n]
+        if y > min(p1y, p2y):
+            if y <= max(p1y, p2y):
+                if x <= max(p1x, p2x):
+                    if p1y != p2y:
+                        xinters = (y-p1y)*(p2x-p1x)/(p2y-p1y)+p1x
+                    if p1x == p2x or x <= xinters:
+                        inside = not inside
+        p1x, p1y = p2x, p2y
+
+    return inside
+
 
 cap = cv.VideoCapture('features/images/short.mp4')
 kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (6, 6))
@@ -19,70 +72,75 @@ while(1):
     # erosion and dilation
     fgmask = cv.morphologyEx(fgmask, cv.MORPH_OPEN, kernel)
 
-    # showing (or not showing the result)
+    # showing (or not showing the result of foreground extraction)
     # cv.imshow('frame', result_white)
 
-    if i == 100:
+    #stopping at frame number...
+    if i == 55:
         # selecting the color pixels from the foreground
-        cv.imwrite("frame.jpg", frame) # visualization
+        cv.imwrite("frame.jpg", frame)  # visualization
         color = cv.bitwise_and(frame, frame, mask=fgmask)
-        cv.imwrite("color.jpg", color) # visualization
+        cv.imwrite("color.jpg", color)  # visualization
 
         hsv_image = cv.cvtColor(color, cv.COLOR_BGR2HSV)
-        cv.imwrite("hsv_image.jpg", hsv_image) # visualization pretty in pink
+        cv.imwrite("hsv_image.jpg", hsv_image)  # visualization pretty in pink
         # range
         light_white = (0, 0, 200)
         dark_white = (145, 60, 255)
         # the mask
         mask_white = cv.inRange(hsv_image, light_white, dark_white)
-        cv.imwrite("mask_white.jpg", mask_white) # visualization
+        cv.imwrite("mask_white.jpg", mask_white)  # visualization
         # the pixels
         result_white = cv.bitwise_and(color, color, mask=mask_white)
-        cv.imwrite("result_white.jpg", result_white) # visualization
+        cv.imwrite("result_white.jpg", result_white)  # visualization
 
         # opening and closing
-        kernel = np.ones((13,13),np.uint8)
-        # opening = cv.morphologyEx(mask_white, cv.MORPH_OPEN, kernel)
-        # cv.imwrite("opening.jpg", opening) # visualization
+        kernel = np.ones((15, 15), np.uint8)
         closing = cv.morphologyEx(mask_white, cv.MORPH_CLOSE, kernel)
-        cv.imwrite("closing.jpg", closing) # visualization
-        # find the contours in the mask. Copying because it's destructive
-        cnts = cv.findContours(closing.copy(), cv.RETR_EXTERNAL,
-                       cv.CHAIN_APPROX_SIMPLE)
-        cnts = imutils.grab_contours(cnts)
-        print("Found {} possible smoke clouds".format(len(cnts)))
-        cv.imshow("Mask", closing)
 
-        # loop over the contours
-        for c in cnts:
-            # draw the contour and show it
+        # grabbing the contours
+        cnts = cv.findContours(closing.copy(), cv.RETR_EXTERNAL,
+                               cv.CHAIN_APPROX_SIMPLE)
+        cnts = imutils.grab_contours(cnts)
+        print("Found {} possible smoke clouds in the foreground".format(len(cnts)))
+        # cv.imshow("Mask", closing)
+
+        # now trying to see whether some of the grey regions in the frame are also moving
+        original_grey, color_seg_cnts = simpleGray(frame)
+        overlapping_contours: List[int] = []
+        index = 0
+
+        # loop over the contours from colour segmentation
+        for whole_cnt in color_seg_cnts:
+            # loop over the contours detected after foreground extraction
+            for c in cnts:
+                # counting how many are in
+                results = [] # type: List[bool]
+
+                # loop over each point in each contour object
+                for single in c:
+                    inside = point_inside_polygon(single[0,0], single[0,1], whole_cnt)
+                    results.append(inside)
+                    # print(inside)
+
+                positives = sum(x == True for x in results)
+                # appending the grey objects to the final result
+                if (positives > len(c)/2):
+                    if (original_grey[index] not in overlapping_contours):
+                        overlapping_contours.append(original_grey[index])
+
+            index +=1
+
+        print("Resulting smoke clouds")
+        print(len(overlapping_contours))
+        # draw the contour and show it
+        for c in overlapping_contours:
             cv.drawContours(frame, [c], -1, (0, 255, 0), 2)
             cv.imshow("Image", frame)
             cv.waitKey(0)
-
 
     # k = cv.waitKey(30) & 0xff
     # if k == 27:
     #         break
 cap.release()
 cv.destroyAllWindows()
-
-
-
-        # # Set up the detector with default parameters.
-        # detector = cv.SimpleBlobDetector_create()
-        
-        # # Detect blobs.
-        # keypoints = detector.detect(mask_white)
-        # print(len(keypoints))
-        
-        # # Draw detected blobs as red circles.
-        # # cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS ensures the size of the circle corresponds to the size of blob
-        # # im_with_keypoints = cv.drawKeypoints(result_white, keypoints, None, cv.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
-        # img2 = mask_white.copy()
-        # for marker in keypoints:
-	    #     img2 = cv.drawMarker(img2, tuple(int(i) for i in marker.pt), color=(0, 255, 0))
-        
-        # # Show keypoints
-        # cv.imshow("Keypoints", img2)
-        # cv.waitKey(0)
