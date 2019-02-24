@@ -6,22 +6,29 @@ from typing import List, Set, Dict, Tuple, Optional, Any
 
 # to simply segment all the gray pixels
 def simpleGray(bgr):
-    hsv_image = cv.cvtColor(bgr, cv.COLOR_BGR2HSV)
-    light_white = (0, 0, 200)
-    dark_white = (145, 60, 255)
-    mask_white = cv.inRange(hsv_image, light_white, dark_white)
-    
+    # hsv_image = cv.cvtColor(bgr, cv.COLOR_BGR2HSV)
+    # light_white = (0, 0, 200)
+    # dark_white = (145, 60, 255)
+    # mask_white = cv.inRange(hsv_image, light_white, dark_white)
+
+    mask_white = np.ones(bgr.shape[:2], dtype="uint8")
+    image_ycrcb = cv.cvtColor(bgr, cv.COLOR_BGR2YCR_CB)
+
+    mask_white[:, :] = (image_ycrcb[:, :, 1] > 50) & (image_ycrcb[:, :, 1] < 141) & (
+        image_ycrcb[:, :, 2] > 50) & (image_ycrcb[:, :, 2] < 170) & (image_ycrcb[:, :, 0] > 200)
+    mask_white = mask_white*255
+
     kernel = np.ones((3, 3), np.uint8)
     opening = cv.morphologyEx(mask_white, cv.MORPH_OPEN, kernel)
-    cv.imwrite("opening_full.jpg", opening) # visualization
+    cv.imwrite("02_opening_full.jpg", opening) # visualization
     closing = cv.morphologyEx(opening, cv.MORPH_CLOSE, kernel)
-    cv.imwrite("closing_full.jpg", closing) # visualization
+    cv.imwrite("03_closing_full.jpg", closing) # visualization
 
     result_white = cv.bitwise_and(bgr, bgr, mask=closing)
     cnts = cv.findContours(closing.copy(), cv.RETR_EXTERNAL,
                            cv.CHAIN_APPROX_SIMPLE)
     cnts = imutils.grab_contours(cnts)
-    cv.imwrite("mask_white.jpg", mask_white)
+    cv.imwrite("04_result_white_full.jpg", result_white)
     print("Found {} possible smoke clouds in the original image".format(len(cnts)))
     # for latter search for intersections
     better_format = []
@@ -78,24 +85,32 @@ while(1):
     #stopping at frame number...
     if i == 55:
         # selecting the color pixels from the foreground
-        cv.imwrite("frame.jpg", frame)  # visualization
+        cv.imwrite("01_fullframe.jpg", frame)  # visualization
         color = cv.bitwise_and(frame, frame, mask=fgmask)
-        cv.imwrite("color.jpg", color)  # visualization
+        cv.imwrite("05_color_foreground.jpg", color)  # visualization
 
-        hsv_image = cv.cvtColor(color, cv.COLOR_BGR2HSV)
-        cv.imwrite("hsv_image.jpg", hsv_image)  # visualization pretty in pink
-        # range
-        light_white = (0, 0, 200)
-        dark_white = (145, 60, 255)
-        # the mask
-        mask_white = cv.inRange(hsv_image, light_white, dark_white)
-        cv.imwrite("mask_white.jpg", mask_white)  # visualization
+        # hsv_image = cv.cvtColor(color, cv.COLOR_BGR2HSV)
+        # cv.imwrite("hsv_image.jpg", hsv_image)  # visualization pretty in pink
+        # # range
+        # light_white = (0, 0, 200)
+        # dark_white = (145, 60, 255)
+        # # the mask
+        # mask_white = cv.inRange(hsv_image, light_white, dark_white)
+
+        mask_white = np.ones(color.shape[:2], dtype="uint8")
+        image_ycrcb = cv.cvtColor(color, cv.COLOR_BGR2YCR_CB)
+
+        mask_white[:, :] = (image_ycrcb[:, :, 1] > 50) & (image_ycrcb[:, :, 1] < 141) & (
+        image_ycrcb[:, :, 2] > 50) & (image_ycrcb[:, :, 2] < 170) & (image_ycrcb[:, :, 0] > 200)
+        mask_white = mask_white*255
+
+        cv.imwrite("06_mask_white_foreground.jpg", mask_white)  # visualization
         # the pixels
         result_white = cv.bitwise_and(color, color, mask=mask_white)
-        cv.imwrite("result_white.jpg", result_white)  # visualization
+        cv.imwrite("07_result_white_foreground.jpg", result_white)  # visualization
 
         # opening and closing
-        kernel = np.ones((15, 15), np.uint8)
+        kernel = np.ones((5, 5), np.uint8)
         closing = cv.morphologyEx(mask_white, cv.MORPH_CLOSE, kernel)
 
         # grabbing the contours
@@ -135,6 +150,8 @@ while(1):
         print(len(overlapping_contours))
         # draw the contour and show it
         for c in overlapping_contours:
+            area = cv.contourArea(c)
+            print(area)
             cv.drawContours(frame, [c], -1, (0, 255, 0), 2)
             cv.imshow("Image", frame)
             cv.waitKey(0)
