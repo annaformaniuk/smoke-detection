@@ -5,6 +5,7 @@ import glob
 import mahotas as mt
 from sklearn.svm import LinearSVC
 from typing import List
+import matplotlib.pyplot as plt
 
 
 # load the training dataset
@@ -63,7 +64,8 @@ clf_svm.fit(train_features, train_labels)
 
 # loop over the test images
 test_path = "images/ml/test"
-for file in glob.glob(test_path + "/*.jpg"):
+fig = plt.figure(figsize=(5, 5))
+for i, file in enumerate(glob.glob(test_path + "/*.jpg")):
        # read the input image
        image = cv2.imread(file)
 
@@ -77,8 +79,12 @@ for file in glob.glob(test_path + "/*.jpg"):
        prediction = clf_svm.predict(features.reshape(1, -1))[0]
 
        # show the label
-       cv2.putText(image, prediction, (20,30), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0,255,255), 3)
-
+#        cv2.putText(image, prediction, (20,30), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0,255,255), 2)
+       ax = fig.add_subplot(1, 4, i + 1)
+       ax.imshow(image, interpolation="nearest", cmap=plt.cm.gray)
+       ax.set_title(prediction, fontsize=10)
+       ax.set_xticks([])
+       ax.set_yticks([])
        # display the output image
-       cv2.imshow("Test_Image", image)
-       cv2.waitKey(0)
+fig.tight_layout()
+plt.show()
