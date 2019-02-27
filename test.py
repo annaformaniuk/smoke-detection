@@ -2,23 +2,34 @@ import numpy as np
 import cv2 as cv
 import imutils
 from typing import List, Set, Dict, Tuple, Optional, Any
+np.seterr(divide='ignore', invalid='ignore')
 
 
 # to simply segment all the gray pixels
 def simpleGray(bgr):
+    # HSV
     # hsv_image = cv.cvtColor(bgr, cv.COLOR_BGR2HSV)
     # light_white = (0, 0, 200)
     # dark_white = (145, 60, 255)
     # mask_white = cv.inRange(hsv_image, light_white, dark_white)
 
+    # YCrCb
+    # mask_white = np.ones(bgr.shape[:2], dtype="uint8")
+    # image_ycrcb = cv.cvtColor(bgr, cv.COLOR_BGR2YCR_CB)
+
+    # mask_white[:, :] = (image_ycrcb[:, :, 1] > 50) & (image_ycrcb[:, :, 1] < 141) & (
+    #     image_ycrcb[:, :, 2] > 50) & (image_ycrcb[:, :, 2] < 170) & (image_ycrcb[:, :, 0] > 200)
+    # mask_white = mask_white*255
+
+    # Saturation plus Value
     mask_white = np.ones(bgr.shape[:2], dtype="uint8")
-    image_ycrcb = cv.cvtColor(bgr, cv.COLOR_BGR2YCR_CB)
+    value = bgr.max(axis=2)
+    dif = value-bgr.min(axis=2)
+    saturation = np.nan_to_num(dif/value)
+    mask_white[:, :] = ((value > 220) & (saturation < 0.20))*255
+    cv.imwrite("saturationPlusValue.jpg", mask_white)
 
-    mask_white[:, :] = (image_ycrcb[:, :, 1] > 50) & (image_ycrcb[:, :, 1] < 141) & (
-        image_ycrcb[:, :, 2] > 50) & (image_ycrcb[:, :, 2] < 170) & (image_ycrcb[:, :, 0] > 200)
-    mask_white = mask_white*255
-
-    kernel = np.ones((3, 3), np.uint8)
+    kernel = np.ones((5, 5), np.uint8)
     opening = cv.morphologyEx(mask_white, cv.MORPH_OPEN, kernel)
     cv.imwrite("02_opening_full.jpg", opening) # visualization
     closing = cv.morphologyEx(opening, cv.MORPH_CLOSE, kernel)
@@ -62,7 +73,7 @@ def point_inside_polygon(x, y, poly):
     return inside
 
 
-cap = cv.VideoCapture('features/images/short.mp4')
+cap = cv.VideoCapture('features/images/YUN00030.mp4')
 kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (6, 6))
 fgbg = cv.createBackgroundSubtractorMOG2(
     history=500, varThreshold=50, detectShadows=False)
@@ -83,7 +94,7 @@ while(1):
     # cv.imshow('frame', result_white)
 
     #stopping at frame number...
-    if i == 55:
+    if i == 50:
         # selecting the color pixels from the foreground
         cv.imwrite("01_fullframe.jpg", frame)  # visualization
         color = cv.bitwise_and(frame, frame, mask=fgmask)
@@ -97,12 +108,20 @@ while(1):
         # # the mask
         # mask_white = cv.inRange(hsv_image, light_white, dark_white)
 
-        mask_white = np.ones(color.shape[:2], dtype="uint8")
-        image_ycrcb = cv.cvtColor(color, cv.COLOR_BGR2YCR_CB)
+        # YCrCb
+        # mask_white = np.ones(color.shape[:2], dtype="uint8")
+        # image_ycrcb = cv.cvtColor(color, cv.COLOR_BGR2YCR_CB)
 
-        mask_white[:, :] = (image_ycrcb[:, :, 1] > 50) & (image_ycrcb[:, :, 1] < 141) & (
-        image_ycrcb[:, :, 2] > 50) & (image_ycrcb[:, :, 2] < 170) & (image_ycrcb[:, :, 0] > 200)
-        mask_white = mask_white*255
+        # mask_white[:, :] = (image_ycrcb[:, :, 1] > 50) & (image_ycrcb[:, :, 1] < 141) & (
+        # image_ycrcb[:, :, 2] > 50) & (image_ycrcb[:, :, 2] < 170) & (image_ycrcb[:, :, 0] > 200)
+        # mask_white = mask_white*255
+
+        # Saturation Plus Value
+        mask_white = np.ones(color.shape[:2], dtype="uint8")
+        value = color.max(axis=2)
+        dif = value - color.min(axis=2)
+        saturation = np.nan_to_num(dif/value)
+        mask_white[:, :] = ((value > 220) & (saturation < 0.20))*255
 
         cv.imwrite("06_mask_white_foreground.jpg", mask_white)  # visualization
         # the pixels

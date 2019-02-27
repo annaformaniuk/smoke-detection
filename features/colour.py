@@ -10,8 +10,9 @@ def simpleGray(bgr):
     light_white = (0, 0, 200)
     dark_white = (145, 60, 255)
     mask_white = cv2.inRange(hsv_image, light_white, dark_white)
-    result_white = cv2.bitwise_and(bgr, bgr, mask=mask_white)
-    cv2.imwrite("hsvGray.jpg", result_white)
+    rgb_image = cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)
+    result_white = cv2.bitwise_and(rgb_image, rgb_image, mask=mask_white)
+    cv2.imwrite("hsvGray.jpg", mask_white)
 
     plt.subplot(1, 2, 1)
     plt.imshow(mask_white, cmap="gray")
@@ -58,7 +59,8 @@ def grayPlusIntensity(bgr, gray, i):
     # So scale the values up with a simple multiplcation
     image_new = image_new*255  # image_new[i,j] = image_new[i,j]*255
     cv2.imwrite("grayPlusIntensity.jpg", image_new)
-    result_white = cv2.bitwise_and(bgr, bgr, mask=image_new)
+    rgb_image = cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)
+    result_white = cv2.bitwise_and(rgb_image, rgb_image, mask=image_new)
 
     plt.subplot(1, 2, 1)
     plt.imshow(result_white)
@@ -96,12 +98,12 @@ def inYCbCrColourSpace(bgr):
     cv2.imwrite("inYCbCrColourSpace.jpg", image_new)
 
 
-image = cv2.imread('images/YUNC0025.jpg')
+image = cv2.imread('images/01_fullframe.jpg')
 
 gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)  # with grayscale
 # hls_image = cv2.cvtColor(image, cv2.COLOR_BGR2HLS) # or intensity?
 # lightness = hls_image[:,:,1]
 # grayPlusIntensity(image, gray, lightness)
-# saturationPlusValue(rgb_image)
+# saturationPlusValue(image)
 # inYCbCrColourSpace(image)
 simpleGray(image)
