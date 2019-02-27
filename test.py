@@ -73,7 +73,7 @@ def point_inside_polygon(x, y, poly):
     return inside
 
 
-cap = cv.VideoCapture('features/images/YUN00030.mp4')
+cap = cv.VideoCapture('features/images/short.mp4')
 kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (6, 6))
 fgbg = cv.createBackgroundSubtractorMOG2(
     history=500, varThreshold=50, detectShadows=False)
@@ -85,98 +85,100 @@ while(1):
     if frame is None:
         break
 
-    # applying the bs
-    fgmask = fgbg.apply(frame)
-    # erosion and dilation
-    fgmask = cv.morphologyEx(fgmask, cv.MORPH_OPEN, kernel)
+    if (i % 20 == 0):      
 
-    # showing (or not showing the result of foreground extraction)
-    # cv.imshow('frame', result_white)
+        # applying the bs
+        fgmask = fgbg.apply(frame)
+        # erosion and dilation
+        fgmask = cv.morphologyEx(fgmask, cv.MORPH_OPEN, kernel)
 
-    #stopping at frame number...
-    if i == 50:
-        # selecting the color pixels from the foreground
-        cv.imwrite("01_fullframe.jpg", frame)  # visualization
-        color = cv.bitwise_and(frame, frame, mask=fgmask)
-        cv.imwrite("05_color_foreground.jpg", color)  # visualization
+        # showing (or not showing the result of foreground extraction)
+        # cv.imshow('frame', result_white)
 
-        # hsv_image = cv.cvtColor(color, cv.COLOR_BGR2HSV)
-        # cv.imwrite("hsv_image.jpg", hsv_image)  # visualization pretty in pink
-        # # range
-        # light_white = (0, 0, 200)
-        # dark_white = (145, 60, 255)
-        # # the mask
-        # mask_white = cv.inRange(hsv_image, light_white, dark_white)
+        #stopping at frame number...
+        if i == 100:
+            # selecting the color pixels from the foreground
+            cv.imwrite("01_fullframe.jpg", frame)  # visualization
+            color = cv.bitwise_and(frame, frame, mask=fgmask)
+            cv.imwrite("05_color_foreground.jpg", color)  # visualization
 
-        # YCrCb
-        # mask_white = np.ones(color.shape[:2], dtype="uint8")
-        # image_ycrcb = cv.cvtColor(color, cv.COLOR_BGR2YCR_CB)
+            # hsv_image = cv.cvtColor(color, cv.COLOR_BGR2HSV)
+            # cv.imwrite("hsv_image.jpg", hsv_image)  # visualization pretty in pink
+            # # range
+            # light_white = (0, 0, 200)
+            # dark_white = (145, 60, 255)
+            # # the mask
+            # mask_white = cv.inRange(hsv_image, light_white, dark_white)
 
-        # mask_white[:, :] = (image_ycrcb[:, :, 1] > 50) & (image_ycrcb[:, :, 1] < 141) & (
-        # image_ycrcb[:, :, 2] > 50) & (image_ycrcb[:, :, 2] < 170) & (image_ycrcb[:, :, 0] > 200)
-        # mask_white = mask_white*255
+            # YCrCb
+            # mask_white = np.ones(color.shape[:2], dtype="uint8")
+            # image_ycrcb = cv.cvtColor(color, cv.COLOR_BGR2YCR_CB)
 
-        # Saturation Plus Value
-        mask_white = np.ones(color.shape[:2], dtype="uint8")
-        value = color.max(axis=2)
-        dif = value - color.min(axis=2)
-        saturation = np.nan_to_num(dif/value)
-        mask_white[:, :] = ((value > 220) & (saturation < 0.20))*255
+            # mask_white[:, :] = (image_ycrcb[:, :, 1] > 50) & (image_ycrcb[:, :, 1] < 141) & (
+            # image_ycrcb[:, :, 2] > 50) & (image_ycrcb[:, :, 2] < 170) & (image_ycrcb[:, :, 0] > 200)
+            # mask_white = mask_white*255
 
-        cv.imwrite("06_mask_white_foreground.jpg", mask_white)  # visualization
-        # the pixels
-        result_white = cv.bitwise_and(color, color, mask=mask_white)
-        cv.imwrite("07_result_white_foreground.jpg", result_white)  # visualization
+            # Saturation Plus Value
+            mask_white = np.ones(color.shape[:2], dtype="uint8")
+            value = color.max(axis=2)
+            dif = value - color.min(axis=2)
+            saturation = np.nan_to_num(dif/value)
+            mask_white[:, :] = ((value > 220) & (saturation < 0.20))*255
 
-        # opening and closing
-        kernel = np.ones((5, 5), np.uint8)
-        closing = cv.morphologyEx(mask_white, cv.MORPH_CLOSE, kernel)
+            cv.imwrite("06_mask_white_foreground.jpg", mask_white)  # visualization
+            # the pixels
+            result_white = cv.bitwise_and(color, color, mask=mask_white)
+            cv.imwrite("07_result_white_foreground.jpg", result_white)  # visualization
 
-        # grabbing the contours
-        cnts = cv.findContours(closing.copy(), cv.RETR_EXTERNAL,
-                               cv.CHAIN_APPROX_SIMPLE)
-        cnts = imutils.grab_contours(cnts)
-        print("Found {} possible smoke clouds in the foreground".format(len(cnts)))
-        # cv.imshow("Mask", closing)
+            # opening and closing
+            kernel = np.ones((5, 5), np.uint8)
+            closing = cv.morphologyEx(mask_white, cv.MORPH_CLOSE, kernel)
 
-        # now trying to see whether some of the grey regions in the frame are also moving
-        original_grey, color_seg_cnts = simpleGray(frame)
-        overlapping_contours: List[int] = []
-        index = 0
+            # grabbing the contours
+            cnts = cv.findContours(closing.copy(), cv.RETR_EXTERNAL,
+                                cv.CHAIN_APPROX_SIMPLE)
+            cnts = imutils.grab_contours(cnts)
+            print("Found {} possible smoke clouds in the foreground".format(len(cnts)))
+            # cv.imshow("Mask", closing)
 
-        # loop over the contours from colour segmentation
-        for whole_cnt in color_seg_cnts:
-            # loop over the contours detected after foreground extraction
-            for c in cnts:
-                # counting how many are in
-                results = [] # type: List[bool]
+            # now trying to see whether some of the grey regions in the frame are also moving
+            original_grey, color_seg_cnts = simpleGray(frame)
+            overlapping_contours: List[int] = []
+            index = 0
 
-                # loop over each point in each contour object
-                for single in c:
-                    inside = point_inside_polygon(single[0,0], single[0,1], whole_cnt)
-                    results.append(inside)
-                    # print(inside)
+            # loop over the contours from colour segmentation
+            for whole_cnt in color_seg_cnts:
+                # loop over the contours detected after foreground extraction
+                for c in cnts:
+                    # counting how many are in
+                    results = [] # type: List[bool]
 
-                positives = sum(x == True for x in results)
-                # appending the grey objects to the final result
-                if (positives > len(c)/2):
-                    if (original_grey[index] not in overlapping_contours):
-                        overlapping_contours.append(original_grey[index])
+                    # loop over each point in each contour object
+                    for single in c:
+                        inside = point_inside_polygon(single[0,0], single[0,1], whole_cnt)
+                        results.append(inside)
+                        # print(inside)
 
-            index +=1
+                    positives = sum(x == True for x in results)
+                    # appending the grey objects to the final result
+                    if (positives > len(c)/2):
+                        if (original_grey[index] not in overlapping_contours):
+                            overlapping_contours.append(original_grey[index])
 
-        print("Resulting smoke clouds")
-        print(len(overlapping_contours))
-        # draw the contour and show it
-        for c in overlapping_contours:
-            area = cv.contourArea(c)
-            print(area)
-            cv.drawContours(frame, [c], -1, (0, 255, 0), 2)
-            cv.imshow("Image", frame)
-            cv.waitKey(0)
+                index +=1
 
-    # k = cv.waitKey(30) & 0xff
-    # if k == 27:
-    #         break
+            print("Resulting smoke clouds")
+            print(len(overlapping_contours))
+            # draw the contour and show it
+            for c in overlapping_contours:
+                area = cv.contourArea(c)
+                print(area)
+                cv.drawContours(frame, [c], -1, (0, 255, 0), 2)
+                cv.imshow("Image", frame)
+                cv.waitKey(0)
+
+        # k = cv.waitKey(30) & 0xff
+        # if k == 27:
+        #         break
 cap.release()
 cv.destroyAllWindows()
