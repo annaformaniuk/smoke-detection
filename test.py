@@ -7,20 +7,6 @@ np.seterr(divide='ignore', invalid='ignore')
 
 # to simply segment all the gray pixels
 def simpleGray(bgr):
-    # HSV
-    # hsv_image = cv.cvtColor(bgr, cv.COLOR_BGR2HSV)
-    # light_white = (0, 0, 200)
-    # dark_white = (145, 60, 255)
-    # mask_white = cv.inRange(hsv_image, light_white, dark_white)
-
-    # YCrCb
-    # mask_white = np.ones(bgr.shape[:2], dtype="uint8")
-    # image_ycrcb = cv.cvtColor(bgr, cv.COLOR_BGR2YCR_CB)
-
-    # mask_white[:, :] = (image_ycrcb[:, :, 1] > 50) & (image_ycrcb[:, :, 1] < 141) & (
-    #     image_ycrcb[:, :, 2] > 50) & (image_ycrcb[:, :, 2] < 170) & (image_ycrcb[:, :, 0] > 200)
-    # mask_white = mask_white*255
-
     # Saturation plus Value
     mask_white = np.ones(bgr.shape[:2], dtype="uint8")
     value = bgr.max(axis=2)
@@ -101,22 +87,6 @@ while(1):
             cv.imwrite("01_fullframe.jpg", frame)  # visualization
             color = cv.bitwise_and(frame, frame, mask=fgmask)
             cv.imwrite("05_color_foreground.jpg", color)  # visualization
-
-            # hsv_image = cv.cvtColor(color, cv.COLOR_BGR2HSV)
-            # cv.imwrite("hsv_image.jpg", hsv_image)  # visualization pretty in pink
-            # # range
-            # light_white = (0, 0, 200)
-            # dark_white = (145, 60, 255)
-            # # the mask
-            # mask_white = cv.inRange(hsv_image, light_white, dark_white)
-
-            # YCrCb
-            # mask_white = np.ones(color.shape[:2], dtype="uint8")
-            # image_ycrcb = cv.cvtColor(color, cv.COLOR_BGR2YCR_CB)
-
-            # mask_white[:, :] = (image_ycrcb[:, :, 1] > 50) & (image_ycrcb[:, :, 1] < 141) & (
-            # image_ycrcb[:, :, 2] > 50) & (image_ycrcb[:, :, 2] < 170) & (image_ycrcb[:, :, 0] > 200)
-            # mask_white = mask_white*255
 
             # Saturation Plus Value
             mask_white = np.ones(color.shape[:2], dtype="uint8")
