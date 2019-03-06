@@ -59,7 +59,7 @@ def point_inside_polygon(x, y, poly):
     return inside
 
 
-cap = cv.VideoCapture('features/images/short.mp4')
+cap = cv.VideoCapture('features/images/YUNC0025_Trim.mp4')
 kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (6, 6))
 fgbg = cv.createBackgroundSubtractorMOG2(
     history=500, varThreshold=50, detectShadows=False)
@@ -71,7 +71,7 @@ while(1):
     if frame is None:
         break
 
-    if (i % 20 == 0):      
+    if (i > 30)&(i % 10 == 0):      
 
         # applying the bs
         fgmask = fgbg.apply(frame)
@@ -82,7 +82,7 @@ while(1):
         # cv.imshow('frame', result_white)
 
         #stopping at frame number...
-        if i == 100:
+        if i == 300:
             # selecting the color pixels from the foreground
             cv.imwrite("01_fullframe.jpg", frame)  # visualization
             color = cv.bitwise_and(frame, frame, mask=fgmask)
@@ -131,8 +131,9 @@ while(1):
 
                     positives = sum(x == True for x in results)
                     # appending the grey objects to the final result
-                    if (positives > len(c)/2):
-                        if (original_grey[index] not in overlapping_contours):
+                    if (positives > len(c)/1.5):
+                        # for arr in overlapping_contours:
+                        if not any(np.array_equal(original_grey[index], arr) for arr in overlapping_contours):
                             overlapping_contours.append(original_grey[index])
 
                 index +=1
@@ -143,6 +144,7 @@ while(1):
             for c in overlapping_contours:
                 area = cv.contourArea(c)
                 print(area)
+                print(cv.isContourConvex(c))
                 cv.drawContours(frame, [c], -1, (0, 255, 0), 2)
                 cv.imshow("Image", frame)
                 cv.waitKey(0)
