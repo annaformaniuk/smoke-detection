@@ -6,6 +6,7 @@ import mahotas as mt
 from sklearn.svm import LinearSVC
 from typing import List
 import matplotlib.pyplot as plt
+import pickle
 
 
 # load the training dataset
@@ -61,6 +62,10 @@ clf_svm = LinearSVC(random_state=9)
 # fit the training data and labels
 print("[STATUS] Fitting data/label to model..")
 clf_svm.fit(train_features, train_labels)
+
+# save the model to disk
+filename = 'finalized_model.sav'
+pickle.dump(clf_svm, open(filename, 'wb'))
 
 # loop over the test images
 test_path = "images/ml/test"

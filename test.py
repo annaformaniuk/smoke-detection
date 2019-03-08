@@ -1,10 +1,16 @@
 import numpy as np
 import cv2 as cv
 import imutils
+import pickle
+import mahotas as mt
 from typing import List, Set, Dict, Tuple, Optional, Any
 np.seterr(divide='ignore', invalid='ignore')
 
 kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (7, 7))
+
+# load the model from disk
+filename = 'features/finalized_model.sav'
+texture_model = pickle.load(open(filename, 'rb'))
 
 # extracts contours of the grey pixels
 def extractContoursOfGrey(bgr, type):
@@ -60,6 +66,16 @@ def point_inside_polygon(x, y, poly):
         p1x, p1y = p2x, p2y
 
     return inside
+
+# Haralick (move somewhere else)
+def extract_features(image):
+        # calculate haralick texture features for 4 types of adjacency
+        textures = mt.features.haralick(image)
+        print(textures)
+
+        # take the mean of it and return it
+        ht_mean = textures.mean(axis=0)
+        return ht_mean
 
 
 cap = cv.VideoCapture('features/images/YUNC0025_Trim.mp4')
@@ -129,6 +145,31 @@ while(1):
                 print(cv.isContourConvex(c))
                 # not sure about this at all
                 print(area/cv.contourArea(cv.convexHull(c)))
+
+                
+                # # Initialize empty list
+                # lst_intensities: List = []
+                gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
+                cimg = np.zeros_like(gray)
+                cv.fillPoly(cimg, pts = [c], color=(255,255,255))
+                # Access the image pixels and create a 1D numpy array then add to list
+                # pts = np.where(cimg == 255)
+                # lst_intensities.append(gray[pts[0], pts[1]])
+                # print(lst_intensities)
+                extracted_pixels = cv.bitwise_and(frame, frame, mask=cimg)
+                x,y,w,h = cv.boundingRect(c)
+                # cv.rectangle(extracted_pixels,(x,y),(x+w,y+h),(0,255,0),2)
+                crop_img = extracted_pixels[y:y+h, x:x+w]
+                # cv.imwrite("crop_img.jpg", crop_img) # visualization
+                # extract haralick texture from the image
+                features = extract_features(gray)
+
+                # evaluate the model and predict label
+                prediction = texture_model.predict(features.reshape(1, -1))[0]
+                print(prediction)
+
+
+
                 cv.drawContours(frame, [c], -1, (0, 255, 0), 2)
                 cv.imshow("Image", frame)
                 cv.waitKey(0)
