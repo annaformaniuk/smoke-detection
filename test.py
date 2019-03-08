@@ -4,28 +4,31 @@ import imutils
 from typing import List, Set, Dict, Tuple, Optional, Any
 np.seterr(divide='ignore', invalid='ignore')
 
+kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (7, 7))
 
-# to simply segment all the gray pixels
-def simpleGray(bgr):
-    # Saturation plus Value
+# extracts contours of the grey pixels
+def extractContoursOfGrey(bgr, type):
     mask_white = np.ones(bgr.shape[:2], dtype="uint8")
     value = bgr.max(axis=2)
     dif = value-bgr.min(axis=2)
     saturation = np.nan_to_num(dif/value)
     mask_white[:, :] = ((value > 220) & (saturation < 0.20))*255
-    cv.imwrite("saturationPlusValue.jpg", mask_white)
-
-    kernel = np.ones((5, 5), np.uint8)
+    cv.imwrite(type + "saturationPlusValue.jpg ", mask_white)
     opening = cv.morphologyEx(mask_white, cv.MORPH_OPEN, kernel)
-    cv.imwrite("02_opening_full.jpg", opening) # visualization
+    cv.imwrite(type + "02_opening.jpg ", opening) # visualization
     closing = cv.morphologyEx(opening, cv.MORPH_CLOSE, kernel)
-    cv.imwrite("03_closing_full.jpg", closing) # visualization
-
+    cv.imwrite(type + "03_closing.jpg ", closing) # visualization
     result_white = cv.bitwise_and(bgr, bgr, mask=closing)
+    cv.imwrite(type + "07_result_white.jpg", result_white)  # visualization
     cnts = cv.findContours(closing.copy(), cv.RETR_EXTERNAL,
-                           cv.CHAIN_APPROX_SIMPLE)
+                                cv.CHAIN_APPROX_SIMPLE)
     cnts = imutils.grab_contours(cnts)
-    cv.imwrite("04_result_white_full.jpg", result_white)
+    return cnts
+
+
+# to simply segment all the gray pixels
+def simpleGray(bgr):
+    cnts = extractContoursOfGrey(bgr, "full")
     print("Found {} possible smoke clouds in the original image".format(len(cnts)))
     # for latter search for intersections
     better_format = []
@@ -60,7 +63,6 @@ def point_inside_polygon(x, y, poly):
 
 
 cap = cv.VideoCapture('features/images/YUNC0025_Trim.mp4')
-kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (6, 6))
 fgbg = cv.createBackgroundSubtractorMOG2(
     history=500, varThreshold=50, detectShadows=False)
 while(1):
@@ -71,7 +73,7 @@ while(1):
     if frame is None:
         break
 
-    if (i > 30)&(i % 10 == 0):      
+    if (i > 30)&(i % 5 == 0):      
 
         # applying the bs
         fgmask = fgbg.apply(frame)
@@ -87,27 +89,7 @@ while(1):
             cv.imwrite("01_fullframe.jpg", frame)  # visualization
             color = cv.bitwise_and(frame, frame, mask=fgmask)
             cv.imwrite("05_color_foreground.jpg", color)  # visualization
-
-            # Saturation Plus Value
-            mask_white = np.ones(color.shape[:2], dtype="uint8")
-            value = color.max(axis=2)
-            dif = value - color.min(axis=2)
-            saturation = np.nan_to_num(dif/value)
-            mask_white[:, :] = ((value > 220) & (saturation < 0.20))*255
-
-            cv.imwrite("06_mask_white_foreground.jpg", mask_white)  # visualization
-            # the pixels
-            result_white = cv.bitwise_and(color, color, mask=mask_white)
-            cv.imwrite("07_result_white_foreground.jpg", result_white)  # visualization
-
-            # opening and closing
-            kernel = np.ones((5, 5), np.uint8)
-            closing = cv.morphologyEx(mask_white, cv.MORPH_CLOSE, kernel)
-
-            # grabbing the contours
-            cnts = cv.findContours(closing.copy(), cv.RETR_EXTERNAL,
-                                cv.CHAIN_APPROX_SIMPLE)
-            cnts = imutils.grab_contours(cnts)
+            cnts = extractContoursOfGrey(color, "moved")
             print("Found {} possible smoke clouds in the foreground".format(len(cnts)))
             # cv.imshow("Mask", closing)
 
@@ -138,13 +120,15 @@ while(1):
 
                 index +=1
 
-            print("Resulting smoke clouds")
+            print("Resulting smoke clouds:")
             print(len(overlapping_contours))
             # draw the contour and show it
             for c in overlapping_contours:
                 area = cv.contourArea(c)
                 print(area)
                 print(cv.isContourConvex(c))
+                # not sure about this at all
+                print(area/cv.contourArea(cv.convexHull(c)))
                 cv.drawContours(frame, [c], -1, (0, 255, 0), 2)
                 cv.imshow("Image", frame)
                 cv.waitKey(0)
