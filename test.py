@@ -67,7 +67,7 @@ def point_inside_polygon(x, y, poly):
 
     return inside
 
-# Haralick (move somewhere else)
+# Haralick (move somewhere else?)
 def extract_features(image):
         # calculate haralick texture features for 4 types of adjacency
         textures = mt.features.haralick(image)
@@ -78,7 +78,11 @@ def extract_features(image):
         return ht_mean
 
 
-cap = cv.VideoCapture('features/images/YUNC0025_Trim.mp4')
+# DJI_0899_Trim 200
+# YUNC0025_Trim 250, 300 and mod 5 
+# short, until 110
+# DJI_08441, 220
+cap = cv.VideoCapture('features/images/DJI_08441.mp4')
 fgbg = cv.createBackgroundSubtractorMOG2(
     history=500, varThreshold=50, detectShadows=False)
 while(1):
@@ -89,7 +93,7 @@ while(1):
     if frame is None:
         break
 
-    if (i > 30)&(i % 5 == 0):      
+    if (i > 50) & (i % 5 == 0):      
 
         # applying the bs
         fgmask = fgbg.apply(frame)
@@ -99,8 +103,8 @@ while(1):
         # showing (or not showing the result of foreground extraction)
         # cv.imshow('frame', result_white)
 
-        #stopping at frame number...
-        if i == 300:
+        # stopping at frame number...
+        if i == 220:
             # selecting the color pixels from the foreground
             cv.imwrite("01_fullframe.jpg", frame)  # visualization
             color = cv.bitwise_and(frame, frame, mask=fgmask)

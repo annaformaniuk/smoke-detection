@@ -10,7 +10,7 @@ import pickle
 
 
 # load the training dataset
-train_path = "images/ml/train"
+train_path = "images/ml2/train"
 train_names = os.listdir(train_path)
 
 # empty list to hold feature vectors and train labels
@@ -20,7 +20,7 @@ train_labels = [] # type: List
 def extract_features(image):
         # calculate haralick texture features for 4 types of adjacency
         textures = mt.features.haralick(image)
-        print(textures)
+        # print(textures)
 
         # take the mean of it and return it
         ht_mean = textures.mean(axis=0)
@@ -68,7 +68,7 @@ filename = 'finalized_model.sav'
 pickle.dump(clf_svm, open(filename, 'wb'))
 
 # loop over the test images
-test_path = "images/ml/test"
+test_path = "images/ml2/test"
 fig = plt.figure(figsize=(5, 5))
 for i, file in enumerate(glob.glob(test_path + "/*.jpg")):
        # read the input image

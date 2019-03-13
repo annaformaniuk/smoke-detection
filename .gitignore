@@ -3,3 +3,5 @@
 features/*.jpg
 features/*.mp4
 features/images/
+georef/
+*.sav
