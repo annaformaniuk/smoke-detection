@@ -1,31 +1,40 @@
 import numpy as np
 import cv2 as cv
 import imutils
+import pickle
+import mahotas as mt
 from typing import List, Set, Dict, Tuple, Optional, Any
 np.seterr(divide='ignore', invalid='ignore')
 
+kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (7, 7))
 
-# to simply segment all the gray pixels
-def simpleGray(bgr):
-    # Saturation plus Value
+# load the model from disk
+filename = 'features/finalized_model.sav'
+texture_model = pickle.load(open(filename, 'rb'))
+
+# extracts contours of the grey pixels
+def extractContoursOfGrey(bgr, type):
     mask_white = np.ones(bgr.shape[:2], dtype="uint8")
     value = bgr.max(axis=2)
     dif = value-bgr.min(axis=2)
     saturation = np.nan_to_num(dif/value)
     mask_white[:, :] = ((value > 220) & (saturation < 0.20))*255
-    cv.imwrite("saturationPlusValue.jpg", mask_white)
-
-    kernel = np.ones((5, 5), np.uint8)
+    cv.imwrite(type + "saturationPlusValue.jpg ", mask_white)
     opening = cv.morphologyEx(mask_white, cv.MORPH_OPEN, kernel)
-    cv.imwrite("02_opening_full.jpg", opening) # visualization
+    cv.imwrite(type + "02_opening.jpg ", opening) # visualization
     closing = cv.morphologyEx(opening, cv.MORPH_CLOSE, kernel)
-    cv.imwrite("03_closing_full.jpg", closing) # visualization
-
+    cv.imwrite(type + "03_closing.jpg ", closing) # visualization
     result_white = cv.bitwise_and(bgr, bgr, mask=closing)
+    cv.imwrite(type + "07_result_white.jpg", result_white)  # visualization
     cnts = cv.findContours(closing.copy(), cv.RETR_EXTERNAL,
-                           cv.CHAIN_APPROX_SIMPLE)
+                                cv.CHAIN_APPROX_SIMPLE)
     cnts = imutils.grab_contours(cnts)
-    cv.imwrite("04_result_white_full.jpg", result_white)
+    return cnts
+
+
+# to simply segment all the gray pixels
+def simpleGray(bgr):
+    cnts = extractContoursOfGrey(bgr, "full")
     print("Found {} possible smoke clouds in the original image".format(len(cnts)))
     # for latter search for intersections
     better_format = []
@@ -58,9 +67,22 @@ def point_inside_polygon(x, y, poly):
 
     return inside
 
+# Haralick (move somewhere else?)
+def extract_features(image):
+        # calculate haralick texture features for 4 types of adjacency
+        textures = mt.features.haralick(image)
+        print(textures)
 
-cap = cv.VideoCapture('features/images/short.mp4')
-kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (6, 6))
+        # take the mean of it and return it
+        ht_mean = textures.mean(axis=0)
+        return ht_mean
+
+
+# DJI_0899_Trim 200
+# YUNC0025_Trim 250, 300 and mod 5 
+# short, until 110
+# DJI_08441, 220
+cap = cv.VideoCapture('features/images/DJI_08441.mp4')
 fgbg = cv.createBackgroundSubtractorMOG2(
     history=500, varThreshold=50, detectShadows=False)
 while(1):
@@ -71,7 +93,7 @@ while(1):
     if frame is None:
         break
 
-    if (i % 20 == 0):      
+    if (i > 50) & (i % 5 == 0):      
 
         # applying the bs
         fgmask = fgbg.apply(frame)
@@ -81,33 +103,13 @@ while(1):
         # showing (or not showing the result of foreground extraction)
         # cv.imshow('frame', result_white)
 
-        #stopping at frame number...
-        if i == 100:
+        # stopping at frame number...
+        if i == 220:
             # selecting the color pixels from the foreground
             cv.imwrite("01_fullframe.jpg", frame)  # visualization
             color = cv.bitwise_and(frame, frame, mask=fgmask)
             cv.imwrite("05_color_foreground.jpg", color)  # visualization
-
-            # Saturation Plus Value
-            mask_white = np.ones(color.shape[:2], dtype="uint8")
-            value = color.max(axis=2)
-            dif = value - color.min(axis=2)
-            saturation = np.nan_to_num(dif/value)
-            mask_white[:, :] = ((value > 220) & (saturation < 0.20))*255
-
-            cv.imwrite("06_mask_white_foreground.jpg", mask_white)  # visualization
-            # the pixels
-            result_white = cv.bitwise_and(color, color, mask=mask_white)
-            cv.imwrite("07_result_white_foreground.jpg", result_white)  # visualization
-
-            # opening and closing
-            kernel = np.ones((5, 5), np.uint8)
-            closing = cv.morphologyEx(mask_white, cv.MORPH_CLOSE, kernel)
-
-            # grabbing the contours
-            cnts = cv.findContours(closing.copy(), cv.RETR_EXTERNAL,
-                                cv.CHAIN_APPROX_SIMPLE)
-            cnts = imutils.grab_contours(cnts)
+            cnts = extractContoursOfGrey(color, "moved")
             print("Found {} possible smoke clouds in the foreground".format(len(cnts)))
             # cv.imshow("Mask", closing)
 
@@ -131,18 +133,47 @@ while(1):
 
                     positives = sum(x == True for x in results)
                     # appending the grey objects to the final result
-                    if (positives > len(c)/2):
-                        if (original_grey[index] not in overlapping_contours):
+                    if (positives > len(c)/1.5):
+                        # for arr in overlapping_contours:
+                        if not any(np.array_equal(original_grey[index], arr) for arr in overlapping_contours):
                             overlapping_contours.append(original_grey[index])
 
                 index +=1
 
-            print("Resulting smoke clouds")
+            print("Resulting smoke clouds:")
             print(len(overlapping_contours))
             # draw the contour and show it
             for c in overlapping_contours:
                 area = cv.contourArea(c)
                 print(area)
+                print(cv.isContourConvex(c))
+                # not sure about this at all
+                print(area/cv.contourArea(cv.convexHull(c)))
+
+                
+                # # Initialize empty list
+                # lst_intensities: List = []
+                gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
+                cimg = np.zeros_like(gray)
+                cv.fillPoly(cimg, pts = [c], color=(255,255,255))
+                # Access the image pixels and create a 1D numpy array then add to list
+                # pts = np.where(cimg == 255)
+                # lst_intensities.append(gray[pts[0], pts[1]])
+                # print(lst_intensities)
+                extracted_pixels = cv.bitwise_and(frame, frame, mask=cimg)
+                x,y,w,h = cv.boundingRect(c)
+                # cv.rectangle(extracted_pixels,(x,y),(x+w,y+h),(0,255,0),2)
+                crop_img = extracted_pixels[y:y+h, x:x+w]
+                # cv.imwrite("crop_img.jpg", crop_img) # visualization
+                # extract haralick texture from the image
+                features = extract_features(gray)
+
+                # evaluate the model and predict label
+                prediction = texture_model.predict(features.reshape(1, -1))[0]
+                print(prediction)
+
+
+
                 cv.drawContours(frame, [c], -1, (0, 255, 0), 2)
                 cv.imshow("Image", frame)
                 cv.waitKey(0)
