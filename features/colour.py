@@ -38,7 +38,7 @@ def simpleGray(bgr):
 # from Yu C., A real-time video fire flame and smoke detection algorithm
 def grayPlusIntensity(bgr, gray, i):
     rgb = cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)
-    image_new = np.ones(gray.shape[:2], dtype="uint8")
+    mask_white = np.ones(gray.shape[:2], dtype="uint8")
     m = np.ones(gray.shape[:2], dtype="uint8")
     n = np.ones(gray.shape[:2], dtype="uint8")
     # i = np.ones(gray.shape[:2], dtype="uint8")
@@ -54,48 +54,69 @@ def grayPlusIntensity(bgr, gray, i):
     # counter = np.sum(m-n < 20)  # Sums work on binary values
 
     # This is 0 or 1 depending on whether it is == 0
-    image_new[:, :] = (i > 200) & (m - n < 20)
+    mask_white[:, :] = (i > 190) & (m - n < 20)
 
     # So scale the values up with a simple multiplcation
-    image_new = image_new*255  # image_new[i,j] = image_new[i,j]*255
-    cv2.imwrite("grayPlusIntensity.jpg", image_new)
+    mask_white = mask_white*255  # image_new[i,j] = image_new[i,j]*255
+    cv2.imwrite("grayPlusIntensity.jpg", mask_white)
     rgb_image = cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)
-    result_white = cv2.bitwise_and(rgb_image, rgb_image, mask=image_new)
+    result_white = cv2.bitwise_and(rgb_image, rgb_image, mask=mask_white)
 
     plt.subplot(1, 2, 1)
-    plt.imshow(result_white)
+    plt.imshow(mask_white, cmap="gray")
     plt.subplot(1, 2, 2)
 
-    blur = cv2.GaussianBlur(image_new, (7, 7), 0)
+    blur = cv2.GaussianBlur(result_white, (7, 7), 0)
     plt.imshow(blur)
     plt.show()
 
 
 # from Shafar, Early Smoke Detection on Video Using Wavelet Energy
-def saturationPlusValue(rgb):
-    image_new = np.ones(gray.shape[:2], dtype="uint8")
+def saturationPlusValue(bgr):
+    mask_white = np.ones(gray.shape[:2], dtype="uint8")
     value = np.ones(gray.shape[:2], dtype="uint8")
-    value = rgb.max(axis=2)
-    minimum = rgb.min(axis=2)
+    value = bgr.max(axis=2)
+    minimum = bgr.min(axis=2)
     dif = value-minimum
     saturation = np.ones(gray.shape[:2], dtype="uint8")
 
     saturation = np.nan_to_num(dif/value)
     print(value)
 
-    image_new[:, :] = (value > 230) & (saturation < 0.20)
-    image_new = image_new*255
-    cv2.imwrite("saturationPlusValue.jpg", image_new)
+    mask_white[:, :] = (value > 163) & (saturation < 0.37)
+    mask_white = mask_white*255
+    cv2.imwrite("saturationPlusValue.jpg", mask_white)
+    rgb_image = cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)
+    result_white = cv2.bitwise_and(rgb_image, rgb_image, mask=mask_white)
+
+    plt.subplot(1, 2, 1)
+    plt.imshow(mask_white, cmap="gray")
+    plt.subplot(1, 2, 2)
+
+    blur = cv2.GaussianBlur(result_white, (7, 7), 0)
+    plt.imshow(blur)
+    plt.show()
+
 
 # from Wang, Video smoke detection using shape, color, and dynamic features
 def inYCbCrColourSpace(bgr):
-    image_new = np.ones(bgr.shape[:2], dtype="uint8")
+    mask_white = np.ones(bgr.shape[:2], dtype="uint8")
     image_ycrcb = cv2.cvtColor(bgr, cv2.COLOR_BGR2YCR_CB)
 
-    image_new[:, :] = (image_ycrcb[:, :, 1] > 115) & (image_ycrcb[:, :, 1] < 141) & (
-        image_ycrcb[:, :, 2] > 115) & (image_ycrcb[:, :, 2] < 141) & (image_ycrcb[:, :, 0] > 220)
-    image_new = image_new*255
-    cv2.imwrite("inYCbCrColourSpace.jpg", image_new)
+    mask_white[:, :] = (image_ycrcb[:, :, 1] > 115) & (image_ycrcb[:, :, 1] < 141) & (
+        image_ycrcb[:, :, 2] > 115) & (image_ycrcb[:, :, 2] < 141) & (image_ycrcb[:, :, 0] > 190)
+    mask_white = mask_white*255
+    cv2.imwrite("inYCbCrColourSpace.jpg", mask_white)
+    rgb_image = cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)
+    result_white = cv2.bitwise_and(rgb_image, rgb_image, mask=mask_white)
+
+    plt.subplot(1, 2, 1)
+    plt.imshow(mask_white, cmap="gray")
+    plt.subplot(1, 2, 2)
+
+    blur = cv2.GaussianBlur(result_white, (7, 7), 0)
+    plt.imshow(blur)
+    plt.show()
 
 
 image = cv2.imread('images/01_fullframe.jpg')
@@ -105,5 +126,5 @@ gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)  # with grayscale
 # lightness = hls_image[:,:,1]
 # grayPlusIntensity(image, gray, lightness)
 # saturationPlusValue(image)
-# inYCbCrColourSpace(image)
-simpleGray(image)
+inYCbCrColourSpace(image)
+# simpleGray(image)
