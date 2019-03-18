@@ -12,6 +12,8 @@ kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (7, 7))
 filename = 'features/finalized_model.sav'
 texture_model = pickle.load(open(filename, 'rb'))
 
+global_smoke: List = []
+
 # extracts contours of the grey pixels
 def extractContoursOfGrey(bgr, type):
     mask_white = np.ones(bgr.shape[:2], dtype="uint8")
@@ -171,6 +173,8 @@ while(1):
                 # evaluate the model and predict label
                 prediction = texture_model.predict(features.reshape(1, -1))[0]
                 print(prediction)
+                if (prediction == "maybe-smoke"):
+                    global_smoke.append(c)
 
 
 
@@ -181,5 +185,38 @@ while(1):
         # k = cv.waitKey(30) & 0xff
         # if k == 27:
         #         break
+    if (i == 250):
+        print("hellooooo")
+        print(len(global_smoke))
+        cv.imwrite("validation.jpg", frame)  # visualization
+        original_grey_v, color_seg_cnts_v = simpleGray(frame)
+        overlapping_contours_v: List[int] = []
+        print(len(color_seg_cnts_v))
+        index_v = 0
+        for whole_cnt_v in color_seg_cnts_v:
+            for c_v in global_smoke:
+                results_v = [] # type: List[bool]
+                for single_v in c_v:
+                    inside_v = point_inside_polygon(single_v[0,0], single_v[0,1], whole_cnt_v)
+                    results_v.append(inside_v)
+                positives_v = sum(x == True for x in results_v)
+                print(positives_v) 
+                print(index_v)
+                print(len(c_v))
+                if (positives_v > len(c_v)/2):
+                    if not any(np.array_equal(original_grey_v[index_v], arr) for arr in overlapping_contours_v):
+                            overlapping_contours_v.append(original_grey_v[index_v])
+            index_v +=1
+        print("After validation")
+        print(len(overlapping_contours_v))
+        for c_v in overlapping_contours_v:
+            area_v = cv.contourArea(c_v)
+            print(area_v)
+            cv.drawContours(frame, [c_v], -1, (125, 125, 0), 2)
+            cv.drawContours(frame, [global_smoke[0]], -1, (0, 0, 255), 2)
+            cv.imshow("Image", frame)
+            cv.waitKey(0)
+
+
 cap.release()
 cv.destroyAllWindows()
