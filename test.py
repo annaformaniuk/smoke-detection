@@ -69,6 +69,24 @@ def point_inside_polygon(x, y, poly):
 
     return inside
 
+def overlap_checker(first, first_formatted, second):
+    overlapping_contours: List[int] = []
+    counter = 0
+    for f in first:
+        for s in second:
+            results = [] # type: List[bool]
+            for single_s in s:
+                inside = point_inside_polygon(single_s[0,0], single_s[0,1], f)
+                results.append(inside)
+            positives = sum(x == True for x in results)
+            if (positives > len(s)/2):
+                if not any(np.array_equal(first_formatted[counter], arr) for arr in overlapping_contours):
+                        overlapping_contours.append(first_formatted[counter])
+        counter +=1
+
+    return(overlapping_contours)
+
+
 # Haralick (move somewhere else?)
 def extract_features(image):
         # calculate haralick texture features for 4 types of adjacency
@@ -84,7 +102,7 @@ def extract_features(image):
 # YUNC0025_Trim 250, 300 and mod 5 
 # short, until 110
 # DJI_08441, 220
-cap = cv.VideoCapture('features/images/DJI_08441.mp4')
+cap = cv.VideoCapture('features/images/short.mp4')
 fgbg = cv.createBackgroundSubtractorMOG2(
     history=500, varThreshold=50, detectShadows=False)
 while(1):
@@ -94,8 +112,8 @@ while(1):
     # stop before the video ends not to give an error
     if frame is None:
         break
-
-    if (i > 50) & (i % 5 == 0):      
+# (i > 50) & 
+    if (i % 5 == 0):      
 
         # applying the bs
         fgmask = fgbg.apply(frame)
@@ -106,7 +124,7 @@ while(1):
         # cv.imshow('frame', result_white)
 
         # stopping at frame number...
-        if i == 220:
+        if i == 80:
             # selecting the color pixels from the foreground
             cv.imwrite("01_fullframe.jpg", frame)  # visualization
             color = cv.bitwise_and(frame, frame, mask=fgmask)
@@ -117,31 +135,7 @@ while(1):
 
             # now trying to see whether some of the grey regions in the frame are also moving
             original_grey, color_seg_cnts = simpleGray(frame)
-            overlapping_contours: List[int] = []
-            index = 0
-
-            # loop over the contours from colour segmentation
-            for whole_cnt in color_seg_cnts:
-                # loop over the contours detected after foreground extraction
-                for c in cnts:
-                    # counting how many are in
-                    results = [] # type: List[bool]
-
-                    # loop over each point in each contour object
-                    for single in c:
-                        inside = point_inside_polygon(single[0,0], single[0,1], whole_cnt)
-                        results.append(inside)
-                        # print(inside)
-
-                    positives = sum(x == True for x in results)
-                    # appending the grey objects to the final result
-                    if (positives > len(c)/1.5):
-                        # for arr in overlapping_contours:
-                        if not any(np.array_equal(original_grey[index], arr) for arr in overlapping_contours):
-                            overlapping_contours.append(original_grey[index])
-
-                index +=1
-
+            overlapping_contours = overlap_checker(color_seg_cnts, original_grey, cnts)
             print("Resulting smoke clouds:")
             print(len(overlapping_contours))
             # draw the contour and show it
@@ -176,44 +170,25 @@ while(1):
                 if (prediction == "maybe-smoke"):
                     global_smoke.append(c)
 
-
-
-                cv.drawContours(frame, [c], -1, (0, 255, 0), 2)
+                cv.drawContours(frame, [c], -1, (0, 125, 125), 2)
                 cv.imshow("Image", frame)
                 cv.waitKey(0)
 
         # k = cv.waitKey(30) & 0xff
         # if k == 27:
         #         break
-    if (i == 250):
+    if (i == 90):
         print("hellooooo")
         print(len(global_smoke))
         cv.imwrite("validation.jpg", frame)  # visualization
         original_grey_v, color_seg_cnts_v = simpleGray(frame)
-        overlapping_contours_v: List[int] = []
-        print(len(color_seg_cnts_v))
-        index_v = 0
-        for whole_cnt_v in color_seg_cnts_v:
-            for c_v in global_smoke:
-                results_v = [] # type: List[bool]
-                for single_v in c_v:
-                    inside_v = point_inside_polygon(single_v[0,0], single_v[0,1], whole_cnt_v)
-                    results_v.append(inside_v)
-                positives_v = sum(x == True for x in results_v)
-                print(positives_v) 
-                print(index_v)
-                print(len(c_v))
-                if (positives_v > len(c_v)/2):
-                    if not any(np.array_equal(original_grey_v[index_v], arr) for arr in overlapping_contours_v):
-                            overlapping_contours_v.append(original_grey_v[index_v])
-            index_v +=1
-        print("After validation")
-        print(len(overlapping_contours_v))
+        overlapping_contours_v = overlap_checker(color_seg_cnts_v, original_grey_v, global_smoke)
+        
         for c_v in overlapping_contours_v:
             area_v = cv.contourArea(c_v)
             print(area_v)
             cv.drawContours(frame, [c_v], -1, (125, 125, 0), 2)
-            cv.drawContours(frame, [global_smoke[0]], -1, (0, 0, 255), 2)
+            cv.drawContours(frame, [global_smoke[0]], -1, (0, 125, 125), 2)
             cv.imshow("Image", frame)
             cv.waitKey(0)
 
