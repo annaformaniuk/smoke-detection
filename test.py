@@ -1,8 +1,10 @@
 import numpy as np
+from numpy import array
 import cv2 as cv
 import imutils
 import pickle
 import mahotas as mt
+import matplotlib.pyplot as plt #remove later
 from typing import List, Set, Dict, Tuple, Optional, Any
 np.seterr(divide='ignore', invalid='ignore')
 
@@ -20,7 +22,7 @@ def extractContoursOfGrey(bgr, type):
     value = bgr.max(axis=2)
     dif = value-bgr.min(axis=2)
     saturation = np.nan_to_num(dif/value)
-    mask_white[:, :] = ((value > 220) & (saturation < 0.20))*255
+    mask_white[:, :] = ((value > 200) & (saturation < 0.20))*255
     cv.imwrite(type + "saturationPlusValue.jpg ", mask_white)
     opening = cv.morphologyEx(mask_white, cv.MORPH_OPEN, kernel)
     cv.imwrite(type + "02_opening.jpg ", opening) # visualization
@@ -79,7 +81,7 @@ def overlap_checker(first, first_formatted, second):
                 inside = point_inside_polygon(single_s[0,0], single_s[0,1], f)
                 results.append(inside)
             positives = sum(x == True for x in results)
-            if (positives > len(s)/2):
+            if (positives > len(s)/4):
                 if not any(np.array_equal(first_formatted[counter], arr) for arr in overlapping_contours):
                         overlapping_contours.append(first_formatted[counter])
         counter +=1
@@ -91,11 +93,28 @@ def overlap_checker(first, first_formatted, second):
 def extract_features(image):
         # calculate haralick texture features for 4 types of adjacency
         textures = mt.features.haralick(image)
-        print(textures)
 
         # take the mean of it and return it
         ht_mean = textures.mean(axis=0)
         return ht_mean
+
+def get_extremes(cnt):
+    leftmost = tuple(cnt[cnt[:,:,0].argmin()][0])
+    rightmost = tuple(cnt[cnt[:,:,0].argmax()][0])
+    topmost = tuple(cnt[cnt[:,:,1].argmin()][0])
+    bottommost = tuple(cnt[cnt[:,:,1].argmax()][0])
+    # not the centroid so that there would be less calculations?
+    return leftmost, rightmost, topmost, bottommost
+
+
+def resize_contours(input_shape, input_cnt, output_shape):
+    output_cnt = []
+    for c in input_cnt:
+        part = []
+        part.append((int((c[0,0]*output_shape[1])/input_shape[1]), int((c[0,1]*output_shape[0])/input_shape[0])))
+        output_cnt.append(part)
+    a = array(output_cnt)
+    return a
 
 
 # DJI_0899_Trim 200
@@ -124,11 +143,20 @@ while(1):
         # cv.imshow('frame', result_white)
 
         # stopping at frame number...
-        if i == 80:
+        if i == 60:
             # selecting the color pixels from the foreground
             cv.imwrite("01_fullframe.jpg", frame)  # visualization
             color = cv.bitwise_and(frame, frame, mask=fgmask)
             cv.imwrite("05_color_foreground.jpg", color)  # visualization
+            # # visualization for the thesis
+            # plt.subplot(1, 2, 1)
+            # rgb_frame = cv.cvtColor(frame, cv.COLOR_BGR2RGB)
+            # plt.imshow(rgb_frame)
+            # plt.subplot(1, 2, 2)
+            # color_frame = cv.cvtColor(color, cv.COLOR_BGR2RGB)
+            # plt.imshow(color_frame)
+            # plt.show()
+
             cnts = extractContoursOfGrey(color, "moved")
             print("Found {} possible smoke clouds in the foreground".format(len(cnts)))
             # cv.imshow("Mask", closing)
@@ -170,26 +198,56 @@ while(1):
                 if (prediction == "maybe-smoke"):
                     global_smoke.append(c)
 
-                cv.drawContours(frame, [c], -1, (0, 125, 125), 2)
+                cv.drawContours(frame, [c], -1, (0, 125, 255), 2)
+                name = "withcontour_detection {}.jpg".format(area)
+                cv.imwrite(name, frame)  # visualization
                 cv.imshow("Image", frame)
+                
                 cv.waitKey(0)
 
         # k = cv.waitKey(30) & 0xff
         # if k == 27:
         #         break
-    if (i == 90):
+    if (i == 70):
         print("hellooooo")
         print(len(global_smoke))
         cv.imwrite("validation.jpg", frame)  # visualization
-        original_grey_v, color_seg_cnts_v = simpleGray(frame)
-        overlapping_contours_v = overlap_checker(color_seg_cnts_v, original_grey_v, global_smoke)
-        
+        # original_grey_v, color_seg_cnts_v = simpleGray(frame)
+        # overlapping_contours_v = overlap_checker(color_seg_cnts_v, original_grey_v, global_smoke)
+
+        # with georeferenced images
+        image = cv.imread('inputs/Nebel - DJI_0837 - 10m.jpg')
+        resized_image = cv.resize(frame,(image.shape[1],image.shape[0]))
+        # cv.imwrite("frame_resized.jpg", resized_image)  # visualization
+        # cv.imwrite("resized_image.jpg", resized_image)  # visualization
+        # original_grey_v, color_seg_cnts_v = simpleGray(frame)
+        # overlapping_contours_v = overlap_checker(color_seg_cnts_v, original_grey_v, global_smoke)
+
+        old_cnt = resize_contours(frame.shape, global_smoke[0], image.shape)
+
+        original_grey_photo, color_seg_cnts_photo = simpleGray(image)
+        overlapping_contours_v = overlap_checker(color_seg_cnts_photo, original_grey_photo, [old_cnt])
+
         for c_v in overlapping_contours_v:
             area_v = cv.contourArea(c_v)
             print(area_v)
-            cv.drawContours(frame, [c_v], -1, (125, 125, 0), 2)
-            cv.drawContours(frame, [global_smoke[0]], -1, (0, 125, 125), 2)
-            cv.imshow("Image", frame)
+
+            leftmost_d, rightmost_d, topmost_d, bottommost_d = get_extremes(old_cnt)
+            leftmost_v, rightmost_v, topmost_v, bottommost_v = get_extremes(c_v)
+            print("extremes")
+            print(leftmost_d, rightmost_d, topmost_d, bottommost_d)
+            print(leftmost_v, rightmost_v, topmost_v, bottommost_v)
+            # print(frame.shape)
+
+            # old_cnt = resize_contours(frame.shape, global_smoke[0], image.shape)
+            # new_cnt = resize_contours(frame.shape, c_v, image.shape)
+            # print(c_v.shape)
+            # print(new_cnt.shape)
+            cv.drawContours(image, [c_v], -1, (255, 125, 0), 2)
+            cv.drawContours(image, [old_cnt], -1, (0, 125, 255), 2)
+            name = "withcontour_validation reshaped{}.jpg".format(area_v)
+            cv.imwrite(name, image)  # visualization
+            cv.imshow("Image", image)
             cv.waitKey(0)
 
 
