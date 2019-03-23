@@ -4,7 +4,8 @@ import cv2 as cv
 import imutils
 import pickle
 import mahotas as mt
-import matplotlib.pyplot as plt #remove later
+import matplotlib.pyplot as plt # remove later
+from georef import getBearing
 from typing import List, Set, Dict, Tuple, Optional, Any
 np.seterr(divide='ignore', invalid='ignore')
 
@@ -237,7 +238,10 @@ while(1):
             print("extremes")
             print(leftmost_d, rightmost_d, topmost_d, bottommost_d)
             print(leftmost_v, rightmost_v, topmost_v, bottommost_v)
-            # print(frame.shape)
+
+            bearings = getBearing([leftmost_d, rightmost_d, topmost_d, bottommost_d], [leftmost_v, rightmost_v, topmost_v, bottommost_v], "Nebel - DJI_0837 - 10m")
+            print("if this works I'm gonna be so happy")
+            print(bearings)
 
             # old_cnt = resize_contours(frame.shape, global_smoke[0], image.shape)
             # new_cnt = resize_contours(frame.shape, c_v, image.shape)

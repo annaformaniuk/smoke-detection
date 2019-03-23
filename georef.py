@@ -8,6 +8,8 @@ import re
 import decimal
 
 
+
+
 # exiftool.exe and cs2cs.exe must be installed
 # set PROJ_LIB= {{folder with epsg file}} http://svn.osgeo.org/metacrs/proj/trunk/proj/nad/epsg
 # pyproj is faster than cs2cs?
@@ -39,14 +41,19 @@ def dms2dd(degrees, minutes, seconds, direction):
         dd *= -1
     return dd
 
-def parse_dms(dms, replace: False):
+def parse_dms(dms, replace: False, rad: False):
     if (replace):
         dms = dms.replace("d", " deg ")
     parts = re.split('[^\d\w\.]+', dms)
     print(parts)
     deg = dms2dd(parts[0], parts[2], parts[3], parts[4])
-    return round(deg, 5)
+    if (rad):
+        return deg_to_rad(deg)
+    else:
+        return round(deg, 5)
 
+def deg_to_rad(degrees):
+    return degrees * pi / 180
 
 # reading out the exif data
 def getExif(filename): 
@@ -58,9 +65,9 @@ def getExif(filename):
         # tags and values are separated by a colon
         tag,val = each.decode().split(': ', 1) # '1' only allows one split
         exif[tag.strip()] = val.strip()
-    lat = parse_dms(exif['GPS Latitude'], False)
+    lat = parse_dms(exif['GPS Latitude'], False, False)
     print(exif['GPS Latitude'])
-    lon = parse_dms(exif['GPS Longitude'], False)
+    lon = parse_dms(exif['GPS Longitude'], False, False)
     alt = num(exif['Relative Altitude'])
     yaw = num(exif['Gimbal Yaw Degree'])
     return(lat, lon, alt, yaw)
@@ -80,7 +87,7 @@ def lbToUTM(lat, lon, alt):
         return num(output[0]), num(output[1])
 
 def UTMTolb(lat, lon, alt):
-    input_string = '     {}      {}      {} '.format(lon,lat,alt)
+    input_string = '     {}      {}      {} '.format(lat,lon,alt)
     text_file = open("LB2.txt", "w")
     text_file.write(input_string)
     text_file.close()
@@ -121,6 +128,15 @@ def createWorldFile(pixel_size, rotation, lat_mid, lon_mid, name):
         text_file.write("\n")
     text_file.close()
 
+def direction_loookup(brng):
+    bearings = ["NE", "E", "SE", "S", "SW", "W", "NW", "N"]
+    index = brng - 22.5
+    if (index < 0):
+        index += 360
+    index = int(index / 45)
+    return(bearings[index])
+
+# http://www.movable-type.co.uk/scripts/latlong.html
 def getBearing(first_pos, second_pos, file_name):
     exists = os.path.isfile('inputs/{}.jgw'.format(file_name))
     print(first_pos)
@@ -136,23 +152,37 @@ def getBearing(first_pos, second_pos, file_name):
         for pos in first_pos:
             coordx, coordy = pixel2coord(values[0], values[1], values[2], values[3], values[4], values[5], pos[0], pos[1])
             coordx_lb, coordy_lb = UTMTolb(coordx, coordy, 10)
-            first_coord.append((parse_dms(coordx_lb, True), parse_dms(coordy_lb, True)))
+            first_coord.append((parse_dms(coordx_lb, True, True), parse_dms(coordy_lb, True, True)))
         for pos in second_pos:
             coordx, coordy = pixel2coord(values[0], values[1], values[2], values[3], values[4], values[5], pos[0], pos[1])
             coordx_lb, coordy_lb = UTMTolb(coordx, coordy, 10)
-            second_coord.append((parse_dms(coordx_lb, True), parse_dms(coordy_lb, True)))
+            second_coord.append((parse_dms(coordx_lb, True, True), parse_dms(coordy_lb, True, True)))
         print(first_coord)
         print(second_coord)
 
+        directions = []
+        for i, coord in enumerate(first_coord):
+            y = math.sin(second_coord[i][1]-coord[1]) * math.cos(second_coord[i][0])
+            x = math.cos(coord[0])*math.sin(second_coord[i][0]) - math.sin(coord[0])*math.cos(second_coord[i][0])*math.cos(second_coord[i][1]-coord[1])
+            brng = math.degrees(math.atan2(y,x))
+            directions.append(direction_loookup(brng))
+        print(directions)
+        return directions
     else:
         print("nofile")
+        startGeoreferencing(file_name)
+        getBearing(first_pos, second_pos, file_name)
 
-filename = "inputs/Nebel - DJI_0837 - 10m.JPG"
-# lat_LM, lon_LM, altitude, rotation = getExif(filename)
-# print(lat_LM, lon_LM, altitude, rotation)
-# lon_UTM, lat_UTM = lbToUTM(lat_LM, lon_LM, altitude)
-# pixel_size = getPixelSize(altitude)/100
-# createWorldFile(pixel_size, rotation, lon_UTM, lat_UTM, "Nebel - DJI_0837 - 10m")
+
+def startGeoreferencing(name):
+    filename = "inputs/" + name + ".JPG"
+    lat_LM, lon_LM, altitude, rotation = getExif(filename)
+    print(lat_LM, lon_LM, altitude, rotation)
+    lon_UTM, lat_UTM = lbToUTM(lat_LM, lon_LM, altitude)
+    pixel_size = getPixelSize(altitude)/100
+    createWorldFile(pixel_size, rotation, lon_UTM, lat_UTM, name)
+
+
 first = [[2436, 1996],[3727, 1818],[2868, 1359],[2983, 2325]]
 second = [[2051, 2330], [3536, 2131], [3071, 1784], [2418, 2808]]
 getBearing(first, second, "Nebel - DJI_0837 - 10m")
