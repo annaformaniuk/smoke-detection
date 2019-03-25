@@ -103,8 +103,10 @@ def inYCbCrColourSpace(bgr):
     mask_white = np.ones(bgr.shape[:2], dtype="uint8")
     image_ycrcb = cv2.cvtColor(bgr, cv2.COLOR_BGR2YCR_CB)
 
-    mask_white[:, :] = (image_ycrcb[:, :, 1] > 115) & (image_ycrcb[:, :, 1] < 141) & (
-        image_ycrcb[:, :, 2] > 115) & (image_ycrcb[:, :, 2] < 141) & (image_ycrcb[:, :, 0] > 190)
+    mask_white[:, :] = (image_ycrcb[:, :, 1] > 115) & (
+        image_ycrcb[:, :, 1] < 141) & (
+        image_ycrcb[:, :, 2] > 115) & (image_ycrcb[:, :, 2] < 141) & (
+            image_ycrcb[:, :, 0] > 190)
     mask_white = mask_white*255
     cv2.imwrite("inYCbCrColourSpace.jpg", mask_white)
     rgb_image = cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)
