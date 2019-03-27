@@ -1,7 +1,8 @@
 .mypy_cache
+georef/
+snippets/
 *.jpg
-features/*.jpg
 *.mp4
 *.jgw
-georef/
 *.sav
+*.txt

@@ -35,7 +35,7 @@ def to_string(f):
     return format(d1, 'f')
 
 
-def dms2dd(degrees, minutes, seconds, direction):
+def dms_to_dd(degrees, minutes, seconds, direction):
     dd = float(degrees) + float(minutes)/60 + float(seconds)/(60*60)
     if direction == 'W' or direction == 'S':
         dd *= -1
@@ -46,8 +46,7 @@ def parse_dms(dms, replace: False, rad: False):
     if (replace):
         dms = dms.replace("d", " deg ")
     parts = re.split('[^\d\w\.]+', dms)
-    print(parts)
-    deg = dms2dd(parts[0], parts[2], parts[3], parts[4])
+    deg = dms_to_dd(parts[0], parts[2], parts[3], parts[4])
     if (rad):
         return math.radians(deg)
     else:
@@ -55,7 +54,7 @@ def parse_dms(dms, replace: False, rad: False):
 
 
 # reading out the exif data
-def getExif(filename):
+def get_exif(filename):
     exifdata = subprocess.check_output(["exiftool.exe", filename], shell=True)
     # saving to a dictionary
     exifdata = exifdata.splitlines()
@@ -65,7 +64,6 @@ def getExif(filename):
         tag, val = each.decode().split(': ', 1)  # '1' only allows one split
         exif[tag.strip()] = val.strip()
     lat = parse_dms(exif['GPS Latitude'], False, False)
-    print(exif['GPS Latitude'])
     lon = parse_dms(exif['GPS Longitude'], False, False)
     alt = num(exif['Relative Altitude'])
     yaw = num(exif['Gimbal Yaw Degree'])
@@ -73,7 +71,7 @@ def getExif(filename):
 
 
 # LB to UTM
-def lbToUTM(lat, lon, alt):
+def lb_to_UTM(lat, lon, alt):
     input_string = '     {}      {}      {} '.format(lon, lat, alt)
     text_file = open("LB.txt", "w")
     text_file.write(input_string)
@@ -89,7 +87,7 @@ def lbToUTM(lat, lon, alt):
         return num(output[0]), num(output[1])
 
 
-def UTMTolb(lat, lon, alt):
+def UTM_to_lb(lat, lon, alt):
     input_string = '     {}      {}      {} '.format(lat, lon, alt)
     text_file = open("LB2.txt", "w")
     text_file.write(input_string)
@@ -103,30 +101,29 @@ def UTMTolb(lat, lon, alt):
 
 
 # to calculate size of a pixel
-def getPixelSize(flight_height):
+def get_pixel_size(flight_height):
     flight_height_cm = flight_height*100
     GSDh = (flight_height_cm*sensor_height)/(focal_length*image_height)
     GSDw = (flight_height_cm*sensor_width)/(focal_length*image_width)
-    print(GSDh)
-    print(GSDw)
     return round(GSDw, 3) if GSDw > GSDh else round(GSDh, 3)
 
 
 # to calculate coordinates of a pixel
-def pixel2coord(a, d, b, e, c, f, col, row):
+def pixel_to_coord(a, d, b, e, c, f, col, row):
     xp = a * col + b * row + c
     yp = d * col + e * row + f
     return(xp, yp)
 
 
-def createWorldFile(pixel_size, rotation, lat_mid, lon_mid, name):
+def create_worldFile(pixel_size, rotation, lat_mid, lon_mid, name):
     a = pixel_size * math.cos(math.radians(rotation))
     d = -pixel_size * math.sin(math.radians(rotation))
     b = -pixel_size * math.sin(math.radians(rotation))
     e = -pixel_size * math.cos(math.radians(rotation))
     # coord of the (0,0) pixel
-    c, f = pixel2coord(
+    c, f = pixel_to_coord(
         a, d, b, e, lat_mid, lon_mid, -image_width/2, -image_height/2)
+    print("worldfile info:")
     print(a, d, b, e, c, f)
     worldfile = [to_string(a), to_string(
         d), to_string(b), to_string(e), to_string(c), to_string(f)]
@@ -148,30 +145,28 @@ def direction_loookup(brng):
 
 
 # http://www.movable-type.co.uk/scripts/latlong.html
-def getBearing(first_pos, second_pos, file_name):
+def get_bearing(first_pos, second_pos, file_name):
     exists = os.path.isfile('inputs/{}.jgw'.format(file_name))
-    print(first_pos)
     if exists:
-        print(exists)
+        print("WorldFile exists - {}".format(exists))
         values = []
         value_strings = [line.rstrip('\n') for line in open(
             'inputs/{}.jgw'.format(file_name))]
         for v in value_strings:
             values.append(num(v))
-        print(values)
         first_coord = []
         second_coord = []
         for pos in first_pos:
-            coordx, coordy = pixel2coord(
+            coordx, coordy = pixel_to_coord(
                 values[0], values[1], values[2], values[3], values[4], values[
                     5], pos[0], pos[1])
-            coordx_lb, coordy_lb = UTMTolb(coordx, coordy, 10)
+            coordx_lb, coordy_lb = UTM_to_lb(coordx, coordy, 10)
             first_coord.append((parse_dms(coordx_lb, True, True), parse_dms(
                 coordy_lb, True, True)))
         for pos in second_pos:
-            coordx, coordy = pixel2coord(values[0], values[1], values[
+            coordx, coordy = pixel_to_coord(values[0], values[1], values[
                 2], values[3], values[4], values[5], pos[0], pos[1])
-            coordx_lb, coordy_lb = UTMTolb(coordx, coordy, 10)
+            coordx_lb, coordy_lb = UTM_to_lb(coordx, coordy, 10)
             second_coord.append((parse_dms(coordx_lb, True, True), parse_dms(
                 coordy_lb, True, True)))
         print(first_coord)
@@ -186,18 +181,19 @@ def getBearing(first_pos, second_pos, file_name):
                     second_coord[i][1]-coord[1])
             brng = math.degrees(math.atan2(y, x))
             directions.append(direction_loookup(brng))
-        print(directions)
+        # print(directions)
         return directions
     else:
         print("nofile")
-        startGeoreferencing(file_name)
-        getBearing(first_pos, second_pos, file_name)
+        start_georeferencing(file_name)
+        get_bearing(first_pos, second_pos, file_name)
 
 
-def startGeoreferencing(name):
+def start_georeferencing(name):
     filename = "inputs/" + name + ".JPG"
-    lat_LM, lon_LM, altitude, rotation = getExif(filename)
+    lat_LM, lon_LM, altitude, rotation = get_exif(filename)
+    print("lat, lon, alt, rotation:")
     print(lat_LM, lon_LM, altitude, rotation)
-    lon_UTM, lat_UTM = lbToUTM(lat_LM, lon_LM, altitude)
-    pixel_size = getPixelSize(altitude)/100
-    createWorldFile(pixel_size, rotation, lon_UTM, lat_UTM, name)
+    lon_UTM, lat_UTM = lb_to_UTM(lat_LM, lon_LM, altitude)
+    pixel_size = get_pixel_size(altitude)/100
+    create_worldFile(pixel_size, rotation, lon_UTM, lat_UTM, name)
