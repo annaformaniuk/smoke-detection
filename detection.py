@@ -143,12 +143,8 @@ def detect_smoke(name, frame_stop):
             # erosion and dilation
             fgmask = cv.morphologyEx(fgmask, cv.MORPH_OPEN, kernel)
 
-            # to return a previos frame since it might be used in validation
-            if i == frame_stop - 10:
-                previous_frame = frame
-
             # stopping at frame number...
-            if i == frame_stop:
+            if i == frame_stop - 10:
                 current_frame = frame
                 # selecting the color pixels from the foreground
                 cv.imwrite("outputs/00_fullframe.jpg", frame)  # vis
@@ -163,10 +159,14 @@ def detect_smoke(name, frame_stop):
                 original_grey, color_seg_contours = color_segmentation(frame)
                 overlapping_contours = check_overlap(
                     color_seg_contours, original_grey, contours)
+
+            # to return the next frame since it might be used in validation
+            if i == frame_stop:
+                next_frame = frame
     cap.release()
     cv.destroyAllWindows()
 
-    return(previous_frame, current_frame, overlapping_contours)
+    return(next_frame, current_frame, overlapping_contours)
 
 
 def recognize_smoke(frame, contours):
@@ -214,7 +214,7 @@ def recognize_smoke(frame, contours):
 
 def validate_smoke(frame, recognized_smoke, validation_picture, photo_taken):
     validated_smoke = []
-    
+
     # whether a frame or the geotagged image is used
     if (photo_taken):
         image = cv.imread(validation_picture)
@@ -246,3 +246,21 @@ def validate_smoke(frame, recognized_smoke, validation_picture, photo_taken):
 
     return res_contours, validated_smoke
 
+
+def get_direction(first_pos, second_pos):
+    directions = []
+    i = 0
+    for position in first_pos:
+        if (second_pos[i][0] <= position[0]):
+            if (second_pos[i][1] <= position[1]):
+                directions.append("Left-Up")
+            elif (second_pos[i][1] > position[1]):
+                directions.append("Left-Down")
+        elif (second_pos[i][0] > position[0]):
+            if (second_pos[i][1] <= position[1]):
+                directions.append("Right-Up")
+            elif (second_pos[i][1] > position[1]):
+                directions.append("Right-Down")
+        i += 1
+
+    return directions

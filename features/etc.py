@@ -27,7 +27,7 @@ img = cv2.imread('images/DJI_0843_frame00064.jpg')
 # plt.title('Magnitude Spectrum'), plt.xticks([]), plt.yticks([])
 # plt.show()
 
-# grabcut 
+# grabcut
 # img = cv2.imread('DJI_0806_frame00132.jpg')
 # mask = np.zeros(img.shape[:2],np.uint8)
 # bgdModel = np.zeros((1,65),np.float64)
@@ -56,7 +56,7 @@ cnts = cv2.findContours(shapeMask.copy(), cv2.RETR_EXTERNAL,
 cnts = imutils.grab_contours(cnts)
 print("I found {} white shapes".format(len(cnts)))
 cv2.imshow("Mask", shapeMask)
- 
+
 # loop over the contours
 for c in cnts:
 	# draw the contour and show it

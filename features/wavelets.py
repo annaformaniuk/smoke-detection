@@ -5,11 +5,13 @@ import matplotlib.pyplot as plt
 from typing import List, Set, Dict, Tuple, Optional
 import scipy.interpolate as interp
 
-# get back to https://stackoverflow.com/questions/24536552/how-to-combine-pywavelet-and-opencv-for-image-processing
+# get back to
+# https://stackoverflow.com/questions/24536552/how-to-combine-pywavelet-and-opencv-for-image-processing
 
-big_array = []  # type: List[int]
-actual_data = [] # type: List[int]
-time_array = [] # type: List[int]
+big_array = []
+actual_data = []
+time_array = []
+
 
 def w2d(img, mode='haar', level=1):
     imArray = cv2.imread(img)
@@ -22,20 +24,21 @@ def w2d(img, mode='haar', level=1):
     imArray /= 255
 
     # compute coefficients
-    coeffs=pywt.wavedec2(imArray, mode, level=level)
+    coeffs = pywt.wavedec2(imArray, mode, level=level)
 
-    #Process Coefficients
-    coeffs_H=list(coeffs)
+    # Process Coefficients
+    coeffs_H = list(coeffs)
     coeffs_H[0] *= 0
 
     # reconstruction
-    imArray_H=pywt.waverec2(coeffs_H, mode)
+    imArray_H = pywt.waverec2(coeffs_H, mode)
     imArray_H *= 255
-    imArray_H =  np.uint8(imArray_H)
-    #Display result
-    cv2.imshow('image',imArray_H)
+    imArray_H = np.uint8(imArray_H)
+    # Display result
+    cv2.imshow('image', imArray_H)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
+
 
 def three(img):
     imArray = cv2.imread(img)
@@ -63,15 +66,16 @@ def three(img):
     fig.tight_layout()
     plt.show()
 
+
 def w1d(img):
     cap = cv2.VideoCapture(img)
     while(cap.isOpened()):
         ret, frame = cap.read()
-        if ret==True:
+        if ret:
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             global big_array, time_array, actual_data
 
-            window = np.matrix(gray[300:325,300:325])
+            window = np.matrix(gray[300:325, 300:325])
     # # VISUALIZATION
     #         cv2.imshow('frame', window)
     #         if cv2.waitKey(1) & 0xFF == ord('q'):
@@ -87,18 +91,18 @@ def w1d(img):
 
     print(len(big_array))
     print(len(time_array))
-    # (cA, cD) = pywt.dwt(big_array, 'db1') #Single level Discrete Wavelet Transform.
+    # (cA, cD) = pywt.dwt(big_array, 'db1') #Single level DWT.
     coeffs = pywt.wavedec(big_array, 'db1', level=2)
     cA2, cD2, cD1 = coeffs
     plt.plot(big_array)
-    #  to plot the cA and cD coefficients in time, just reduce time resolution by 2
+    #  to plot the cA and cD coefficients in time, reduce time resolution by 2
     asArray = np.array(big_array)
-    cD1_interpr = interp.interp1d(np.arange(cD1.size),cD1)
-    cD1_stretch = cD1_interpr(np.linspace(0,cD1.size-1,asArray.size))
+    cD1_interpr = interp.interp1d(np.arange(cD1.size), cD1)
+    cD1_stretch = cD1_interpr(np.linspace(0, cD1.size-1, asArray.size))
     plt.plot(cD1_stretch)
     plt.show()
 
-w2d("images/DSC00654.jpg",'db1',9)
+w2d("images/DSC00654.jpg", 'db1', 9)
 # three("images/YUNC0025.jpg")
 # print(pywt.wavelist())
 # w1d('images/DJI_0843.mp4')

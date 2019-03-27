@@ -5,7 +5,7 @@ np.seterr(divide='ignore', invalid='ignore')
 
 
 # to simply segment all the gray pixels
-def simpleGray(bgr):
+def simple_gray(bgr):
     hsv_image = cv2.cvtColor(bgr, cv2.COLOR_BGR2HSV)
     light_white = (0, 0, 200)
     dark_white = (145, 60, 255)
@@ -36,7 +36,7 @@ def simpleGray(bgr):
 
 
 # from Yu C., A real-time video fire flame and smoke detection algorithm
-def grayPlusIntensity(bgr, gray, i):
+def gray_plus_intensity(bgr, gray, i):
     rgb = cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)
     mask_white = np.ones(gray.shape[:2], dtype="uint8")
     m = np.ones(gray.shape[:2], dtype="uint8")
@@ -50,15 +50,12 @@ def grayPlusIntensity(bgr, gray, i):
     print(np.amax(i))
     print(i)
 
-    # counter2 = np.sum(np.bitwise_and(img < 10, img > 0))
-    # counter = np.sum(m-n < 20)  # Sums work on binary values
-
     # This is 0 or 1 depending on whether it is == 0
     mask_white[:, :] = (i > 190) & (m - n < 20)
 
     # So scale the values up with a simple multiplcation
     mask_white = mask_white*255  # image_new[i,j] = image_new[i,j]*255
-    cv2.imwrite("grayPlusIntensity.jpg", mask_white)
+    cv2.imwrite("gray_plus_intensity.jpg", mask_white)
     rgb_image = cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)
     result_white = cv2.bitwise_and(rgb_image, rgb_image, mask=mask_white)
 
@@ -72,7 +69,7 @@ def grayPlusIntensity(bgr, gray, i):
 
 
 # from Shafar, Early Smoke Detection on Video Using Wavelet Energy
-def saturationPlusValue(bgr):
+def saturation_plus_value(bgr):
     mask_white = np.ones(gray.shape[:2], dtype="uint8")
     value = np.ones(gray.shape[:2], dtype="uint8")
     value = bgr.max(axis=2)
@@ -85,7 +82,7 @@ def saturationPlusValue(bgr):
 
     mask_white[:, :] = (value > 163) & (saturation < 0.37)
     mask_white = mask_white*255
-    cv2.imwrite("saturationPlusValue.jpg", mask_white)
+    cv2.imwrite("saturation_plus_value.jpg", mask_white)
     rgb_image = cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)
     result_white = cv2.bitwise_and(rgb_image, rgb_image, mask=mask_white)
 
@@ -126,7 +123,7 @@ image = cv2.imread('images/01_fullframe.jpg')
 gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)  # with grayscale
 # hls_image = cv2.cvtColor(image, cv2.COLOR_BGR2HLS) # or intensity?
 # lightness = hls_image[:,:,1]
-# grayPlusIntensity(image, gray, lightness)
-# saturationPlusValue(image)
+# gray_plus_intensity(image, gray, lightness)
+# saturation_plus_value(image)
 inYCbCrColourSpace(image)
-# simpleGray(image)
+# simple_gray(image)
