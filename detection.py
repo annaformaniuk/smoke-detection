@@ -3,6 +3,7 @@ from numpy import array
 import cv2 as cv
 import imutils
 import pickle
+import math
 import mahotas as mt
 import matplotlib.pyplot as plt  # remove later
 from typing import List, Set, Dict, Tuple, Optional, Any
@@ -247,8 +248,30 @@ def validate_smoke(frame, recognized_smoke, validation_picture, photo_taken):
     return res_contours, validated_smoke
 
 
+def check_travelled(distances, directions):
+    print(distances)
+    margins = []
+    results = []
+    for d in distances:
+        print(d)
+        margins.append((d*0.95, d*1.05))
+
+    for i, d in enumerate(distances):
+        one_dist_comparison = []
+        for j, m in enumerate(margins):
+            one_dist_comparison.append(
+                (m[0] <= d <= m[1]) and (directions[i] == directions[j]))
+        print(one_dist_comparison)
+        results.append(sum(x for x in one_dist_comparison) > 1)
+
+    # results.append(margin[0] <= d <= margin[1] and )
+    positives = sum(x for x in results)
+    return positives == len(distances)
+
+
 def get_direction(first_pos, second_pos):
     directions = []
+    distances = []
     i = 0
     for position in first_pos:
         if (second_pos[i][0] <= position[0]):
@@ -261,6 +284,13 @@ def get_direction(first_pos, second_pos):
                 directions.append("Right-Up")
             elif (second_pos[i][1] > position[1]):
                 directions.append("Right-Down")
+
+        dist = math.hypot(
+            second_pos[i][0] - position[0], second_pos[i][1] - position[1])
+        distances.append(dist)
+
         i += 1
 
-    return directions
+    all_travelled = check_travelled(distances, directions)
+
+    return directions, distances, all_travelled

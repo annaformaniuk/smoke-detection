@@ -28,8 +28,11 @@ for r_c in recognized_contours:
             # start_georeferencing("Nebel")
             # bearings = get_bearing(extremes_d, extremes_v, "Nebel")
             # print(bearings)
-            directions = get_direction(extremes_d, extremes_v)
+            directions, distances, all_travelled = get_direction(
+                extremes_d, extremes_v)
             print(directions)
+            print(distances)
+            print(all_travelled)
 
         else:
             print(len(validated_contours))
