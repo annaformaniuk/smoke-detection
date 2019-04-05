@@ -1,5 +1,7 @@
 .mypy_cache
 georef/
+outputs/
+inputs/
 snippets/
 *.jpg
 *.mp4

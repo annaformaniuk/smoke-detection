@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt  # remove later
 from typing import List, Set, Dict, Tuple, Optional, Any
 np.seterr(divide='ignore', invalid='ignore')
 
-kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (7, 7))
+kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (3, 3))
 
 # load the model from disk
 filename = 'features/finalized_model.sav'
@@ -249,11 +249,11 @@ def validate_smoke(frame, recognized_smoke, validation_picture, photo_taken):
 
 
 def check_travelled(distances, directions):
-    print(distances)
+    # print(distances)
     margins = []
     results = []
     for d in distances:
-        print(d)
+        # print(d)
         margins.append((d*0.95, d*1.05))
 
     for i, d in enumerate(distances):
@@ -261,7 +261,7 @@ def check_travelled(distances, directions):
         for j, m in enumerate(margins):
             one_dist_comparison.append(
                 (m[0] <= d <= m[1]) and (directions[i] == directions[j]))
-        print(one_dist_comparison)
+        # print(one_dist_comparison)
         results.append(sum(x for x in one_dist_comparison) > 1)
 
     # results.append(margin[0] <= d <= margin[1] and )

@@ -6,6 +6,7 @@ import os
 import math
 import re
 import decimal
+import json
 
 # exiftool.exe and cs2cs.exe must be installed
 # set PROJ_LIB= {{folder with epsg file}} 
@@ -156,21 +157,25 @@ def get_bearing(first_pos, second_pos, file_name):
             values.append(num(v))
         first_coord = []
         second_coord = []
+        first_deg = []
+        second_deg = []
         for pos in first_pos:
             coordx, coordy = pixel_to_coord(
                 values[0], values[1], values[2], values[3], values[4], values[
                     5], pos[0], pos[1])
             coordx_lb, coordy_lb = UTM_to_lb(coordx, coordy, 10)
+            first_deg.append((parse_dms(coordx_lb, True, False), parse_dms(
+                coordy_lb, True, False)))
             first_coord.append((parse_dms(coordx_lb, True, True), parse_dms(
                 coordy_lb, True, True)))
         for pos in second_pos:
             coordx, coordy = pixel_to_coord(values[0], values[1], values[
                 2], values[3], values[4], values[5], pos[0], pos[1])
             coordx_lb, coordy_lb = UTM_to_lb(coordx, coordy, 10)
+            second_deg.append((parse_dms(coordx_lb, True, False), parse_dms(
+                coordy_lb, True, False)))
             second_coord.append((parse_dms(coordx_lb, True, True), parse_dms(
                 coordy_lb, True, True)))
-        print(first_coord)
-        print(second_coord)
 
         directions = []
         for i, coord in enumerate(first_coord):
@@ -182,7 +187,7 @@ def get_bearing(first_pos, second_pos, file_name):
             brng = math.degrees(math.atan2(y, x))
             directions.append(direction_loookup(brng))
         # print(directions)
-        return directions
+        return first_deg, second_deg, directions
     else:
         print("nofile")
         start_georeferencing(file_name)
@@ -197,3 +202,16 @@ def start_georeferencing(name):
     lon_UTM, lat_UTM = lb_to_UTM(lat_LM, lon_LM, altitude)
     pixel_size = get_pixel_size(altitude)/100
     create_worldFile(pixel_size, rotation, lon_UTM, lat_UTM, name)
+
+
+def saveJson(first, second):
+    first.append(first[0])
+    second.append(second[0])
+    with open('test.json', 'w') as file:
+        json.dump({'type': "FeatureCollection", "features": [{
+            "type": "Feature", "geometry": {
+                "type": "Polygon", "coordinates": [first]}, "style": {
+                    "fill": "red"}, "properties": {"name": "second"}}, {
+            "type": "Feature", "geometry": {
+                "type": "Polygon", "coordinates": [second]}, "style": {
+                    "fill": "blue"}, "properties": {"name": "second"}}]}, file)
