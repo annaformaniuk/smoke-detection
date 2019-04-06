@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt  # remove later
 from typing import List, Set, Dict, Tuple, Optional, Any
 np.seterr(divide='ignore', invalid='ignore')
 
-kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (3, 3))
+kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (7, 7))
 
 # load the model from disk
 filename = 'features/finalized_model.sav'
@@ -23,13 +23,13 @@ def get_grey_contours(bgr, type):
     dif = value-bgr.min(axis=2)
     saturation = np.nan_to_num(dif/value)
     mask_white[:, :] = ((value > 200) & (saturation < 0.20))*255
-    cv.imwrite("outputs/" + type + "01_saturationPlusValue.jpg ", mask_white)
+    # cv.imwrite("outputs/" + type + "01_saturationPlusValue.jpg ", mask_white)
     opening = cv.morphologyEx(mask_white, cv.MORPH_OPEN, kernel)
-    cv.imwrite("outputs/" + type + "02_opening.jpg ", opening)  # visualization
+    # cv.imwrite("outputs/" + type + "02_opening.jpg ", opening)  # visualiz
     closing = cv.morphologyEx(opening, cv.MORPH_CLOSE, kernel)
-    cv.imwrite("outputs/" + type + "03_closing.jpg ", closing)  # visualization
+    # cv.imwrite("outputs/" + type + "03_closing.jpg ", closing)  # visualiz
     result_white = cv.bitwise_and(bgr, bgr, mask=closing)
-    cv.imwrite("outputs/" + type + "04_result_white.jpg", result_white)  # vis
+    # cv.imwrite("outputs/" + type + "04_result_white.jpg", result_white)
     contours = cv.findContours(
         closing.copy(), cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
     contours = imutils.grab_contours(contours)
@@ -87,7 +87,7 @@ def check_overlap(first, first_format, second):
                     single[0, 0], single[0, 1], f_polygon)
                 results.append(inside)
             positives = sum(x for x in results)
-            if (positives > len(s_polygon)/4):
+            if (positives > len(s_polygon)/10):
                 if not any(np.array_equal(
                         first_format[index], arr) for arr in overlapping):
                     overlapping.append(first_format[index])
@@ -112,7 +112,7 @@ def get_extremes(cnt):
     topmost = tuple(cnt[cnt[:, :, 1].argmin()][0])
     bottommost = tuple(cnt[cnt[:, :, 1].argmax()][0])
     # not the centroid so that there would be less calculations?
-    return [leftmost, rightmost, topmost, bottommost]
+    return [leftmost, topmost, rightmost, bottommost]
 
 
 def resize_contours(input_shape, input_cnt, output_shape):
@@ -138,7 +138,7 @@ def detect_smoke(name, frame_stop):
         if frame is None:
             break
 
-        if (i % 5 == 0):
+        if (i % 10 == 0):
             # applying the bs
             fgmask = fgbg.apply(frame)
             # erosion and dilation
@@ -148,9 +148,9 @@ def detect_smoke(name, frame_stop):
             if i == frame_stop - 10:
                 current_frame = frame
                 # selecting the color pixels from the foreground
-                cv.imwrite("outputs/00_fullframe.jpg", frame)  # vis
+                # cv.imwrite("outputs/00_fullframe.jpg", frame)  # vis
                 color = cv.bitwise_and(frame, frame, mask=fgmask)
-                cv.imwrite("outputs/05_color_foreground.jpg", color)  # vis
+                # cv.imwrite("outputs/05_color_foreground.jpg", color)  # vis
                 contours = get_grey_contours(color, "moved")
                 print("Found {} smoke clouds in the foreground".format(
                     len(contours)))
@@ -180,7 +180,7 @@ def recognize_smoke(frame, contours):
         # filter out convex regions
         convexity = area/cv.contourArea(cv.convexHull(c))
         print("Convexity of detected smoke {}: {}".format(index, convexity))
-        if (not cv.isContourConvex(c) and convexity < 0.95):
+        if (not cv.isContourConvex(c) and convexity < 0.95 and area > 100):
             gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
             cimg = np.zeros_like(gray)
             cv.fillPoly(cimg, pts=[c], color=(255, 255, 255))
@@ -207,7 +207,7 @@ def recognize_smoke(frame, contours):
 
                 cv.drawContours(frame, [c], -1, (0, 125, 255), 2)
                 name = "outputs/06_contour_detection {}.jpg".format(area)
-                cv.imwrite(name, frame)  # visualization
+                # cv.imwrite(name, frame)  # visualization
         index += 1
 
     return recognized_smoke
@@ -221,7 +221,7 @@ def validate_smoke(frame, recognized_smoke, validation_picture, photo_taken):
         image = cv.imread(validation_picture)
     else:
         image = validation_picture
-    cv.imwrite("outputs/07_validation.jpg", image)  # vis
+    # cv.imwrite("outputs/07_validation.jpg", image)  # vis
 
     # resizing contours and/or frame
     # resized_image = cv.resize(frame, (image.shape[1], image.shape[0]))
@@ -269,24 +269,46 @@ def check_travelled(distances, directions):
     return positives == len(distances)
 
 
-def get_direction(first_pos, second_pos):
+def direction_loookup(brng):
+    directions = [
+        "top-right", "right", "bottom-right", "bottom",
+        "bottom-left", "left", "top-left", "top"]
+    index = brng - 22.5
+    if (index < 0):
+        index += 360
+    index = int(index / 45)
+    return(directions[index])
+
+
+# def d_l(destination_x, origin_x, destination_y, origin_y, max_x, max_y):
+def d_l(orig_image, dest_image, max_x, max_y):
+    # flipping to cartesian
+    dest_cartesian = [dest_image[0] + (max_x/2), (max_y/2) - dest_image[1]]
+    orig_cartesian = [orig_image[0] + (max_x/2), (max_y/2) - orig_image[1]]
+    deltaX = dest_cartesian[0] - orig_cartesian[0]
+    deltaY = dest_cartesian[1] - orig_cartesian[1]
+    degrees_final = math.atan2(deltaX, deltaY)/math.pi*180
+    if degrees_final < 0:
+        degrees_final += 360
+
+    return direction_loookup(degrees_final), degrees_final
+
+
+def get_direction(first_pos, second_pos, shape):
     directions = []
     distances = []
+    print(shape[0])
     i = 0
-    for position in first_pos:
-        if (second_pos[i][0] <= position[0]):
-            if (second_pos[i][1] <= position[1]):
-                directions.append("Left-Up")
-            elif (second_pos[i][1] > position[1]):
-                directions.append("Left-Down")
-        elif (second_pos[i][0] > position[0]):
-            if (second_pos[i][1] <= position[1]):
-                directions.append("Right-Up")
-            elif (second_pos[i][1] > position[1]):
-                directions.append("Right-Down")
+    for p in first_pos:
+        print("now angle!")
+        direction = d_l(p, second_pos[i], shape[0], shape[1])
+        print(direction)
 
+        directions.append(direction)
+
+        # distance
         dist = math.hypot(
-            second_pos[i][0] - position[0], second_pos[i][1] - position[1])
+            second_pos[i][0] - p[0], second_pos[i][1] - p[1])
         distances.append(dist)
 
         i += 1
