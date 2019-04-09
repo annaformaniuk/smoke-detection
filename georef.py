@@ -185,7 +185,7 @@ def get_bearing(first_pos, second_pos, file_name):
                 coord[0])*math.cos(second_coord[i][0])*math.cos(
                     second_coord[i][1]-coord[1])
             brng = math.degrees(math.atan2(y, x))
-            directions.append(direction_loookup(brng))
+            directions.append((direction_loookup(brng), round(brng)))
         # print(directions)
         return first_deg, second_deg, directions
     else:

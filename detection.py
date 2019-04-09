@@ -291,7 +291,7 @@ def d_l(orig_image, dest_image, max_x, max_y):
     if degrees_final < 0:
         degrees_final += 360
 
-    return direction_loookup(degrees_final), degrees_final
+    return direction_loookup(degrees_final), round(degrees_final)
 
 
 def get_direction(first_pos, second_pos, shape):
@@ -309,7 +309,7 @@ def get_direction(first_pos, second_pos, shape):
         # distance
         dist = math.hypot(
             second_pos[i][0] - p[0], second_pos[i][1] - p[1])
-        distances.append(dist)
+        distances.append(round(dist))
 
         i += 1
 
