@@ -11,7 +11,7 @@ import time
 # DJI_0843
 start = time.time()
 next_frame, frame, detected_contours = detect_smoke(
-    'inputs/DJI_0843_small.mp4', 60)
+    '../inputs/DJI_0843_small.mp4', 60)
 
 print("Detected smoke clouds: {}".format(len(detected_contours)))
 # cv.imwrite("outputs/first.jpg", frame)  # vis
@@ -26,7 +26,7 @@ print("Recognition time: {}".format(recognition_time - detection_time))
 
 for r_c in recognized_contours:
     res_recognized, validated_contours = validate_smoke(
-        frame, r_c, 'inputs/Nebel.jpg', True)
+        frame, r_c, '../inputs/Nebel.jpg', True)
     # res_recognized, validated_contours = validate_smoke(
     #     frame, r_c, next_frame, False)
     validation_time = time.time()
@@ -40,7 +40,7 @@ for r_c in recognized_contours:
             # print("Detected corners: {}".format(extremes_d))
             # print("Validated corners: {}".format(extremes_v))
 
-            image = cv.imread('inputs/Nebel.jpg')
+            image = cv.imread('../inputs/Nebel.jpg')
             directions, distances, all_travelled = get_direction(
                 extremes_d, extremes_v, image.shape)
             print("Direction of travel on image: {}".format(directions))

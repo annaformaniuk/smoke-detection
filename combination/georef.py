@@ -9,7 +9,7 @@ import decimal
 import json
 
 # exiftool.exe and cs2cs.exe must be installed
-# set PROJ_LIB= {{folder with epsg file}} 
+# set PROJ_LIB= {{folder with epsg file}}
 # http://svn.osgeo.org/metacrs/proj/trunk/proj/nad/epsg
 # pyproj is faster than cs2cs?
 
@@ -128,7 +128,7 @@ def create_worldFile(pixel_size, rotation, lat_mid, lon_mid, name):
     print(a, d, b, e, c, f)
     worldfile = [to_string(a), to_string(
         d), to_string(b), to_string(e), to_string(c), to_string(f)]
-    filename = "inputs/{}.jgw".format(name)
+    filename = "../inputs/{}.jgw".format(name)
     text_file = open(filename, "w")
     for line in worldfile:
         text_file.write(line)
@@ -147,12 +147,12 @@ def direction_loookup(brng):
 
 # http://www.movable-type.co.uk/scripts/latlong.html
 def get_bearing(first_pos, second_pos, file_name):
-    exists = os.path.isfile('inputs/{}.jgw'.format(file_name))
+    exists = os.path.isfile('../inputs/{}.jgw'.format(file_name))
     if exists:
         print("WorldFile exists - {}".format(exists))
         values = []
         value_strings = [line.rstrip('\n') for line in open(
-            'inputs/{}.jgw'.format(file_name))]
+            '../inputs/{}.jgw'.format(file_name))]
         for v in value_strings:
             values.append(num(v))
         first_coord = []
@@ -195,7 +195,7 @@ def get_bearing(first_pos, second_pos, file_name):
 
 
 def start_georeferencing(name):
-    filename = "inputs/" + name + ".JPG"
+    filename = "../inputs/" + name + ".JPG"
     lat_LM, lon_LM, altitude, rotation = get_exif(filename)
     print("lat, lon, alt, rotation:")
     print(lat_LM, lon_LM, altitude, rotation)

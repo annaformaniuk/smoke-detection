@@ -12,7 +12,7 @@ np.seterr(divide='ignore', invalid='ignore')
 kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (7, 7))
 
 # load the model from disk
-filename = 'features/finalized_model.sav'
+filename = '../outputs/finalized_model.sav'
 texture_model = pickle.load(open(filename, 'rb'))
 
 
@@ -96,7 +96,7 @@ def check_overlap(first, first_format, second):
     return(overlapping)
 
 
-# Haralick (move somewhere else?)
+# Haralick feature extraction
 def extract_features(image):
     # calculate haralick texture features
     textures = mt.features.haralick(image)
@@ -240,9 +240,10 @@ def validate_smoke(frame, recognized_smoke, validation_picture, photo_taken):
             index, area_v, area_d))
         if (area_v > area_d):
             validated_smoke.append(c_v)
-            cv.drawContours(image, [c_v], -1, (255, 125, 0), 2)
-            cv.drawContours(image, [res_contours], -1, (0, 125, 255), 2)
-            name = "outputs/08_cnt_valid_reshaped {}.jpg".format(area_v)
+            cv.drawContours(image, [c_v], -1, (255, 125, 0), 15)
+            cv.drawContours(
+                image, [res_contours], -1, (0, 125, 255), 15)
+            name = "../outputs/08_cnt_valid_reshaped {}.jpg".format(area_v)
             cv.imwrite(name, image)  # visualization
 
     return res_contours, validated_smoke
@@ -253,7 +254,6 @@ def check_travelled(distances, directions):
     margins = []
     results = []
     for d in distances:
-        # print(d)
         margins.append((d*0.95, d*1.05))
 
     for i, d in enumerate(distances):
@@ -300,9 +300,7 @@ def get_direction(first_pos, second_pos, shape):
     print(shape[0])
     i = 0
     for p in first_pos:
-        print("now angle!")
         direction = d_l(p, second_pos[i], shape[0], shape[1])
-        print(direction)
 
         directions.append(direction)
 
