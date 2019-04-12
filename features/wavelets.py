@@ -5,9 +5,6 @@ import matplotlib.pyplot as plt
 from typing import List, Set, Dict, Tuple, Optional
 import scipy.interpolate as interp
 
-# get back to
-# https://stackoverflow.com/questions/24536552/how-to-combine-pywavelet-and-opencv-for-image-processing
-
 big_array = []
 actual_data = []
 time_array = []
@@ -40,7 +37,7 @@ def w2d(img, mode='haar', level=1):
     cv2.destroyAllWindows()
 
 
-def three(img):
+def details(img):
     imArray = cv2.imread(img)
     # Datatype conversions
     # convert to grayscale
@@ -102,7 +99,4 @@ def w1d(img):
     plt.plot(cD1_stretch)
     plt.show()
 
-w2d("images/DSC00654.jpg", 'db1', 9)
-# three("images/YUNC0025.jpg")
-# print(pywt.wavelist())
-# w1d('images/DJI_0843.mp4')
+
