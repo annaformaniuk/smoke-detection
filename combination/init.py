@@ -4,11 +4,6 @@ from georef import get_bearing, start_georeferencing, saveJson
 import cv2 as cv
 import time
 
-# DJI_0899_Trim 200
-# YUNC0025_Trim 250, 300 and mod 5
-# short, until 110
-# DJI_08441, 220
-# DJI_0843
 start = time.time()
 next_frame, frame, detected_contours = detect_smoke(
     '../inputs/DJI_0843_small.mp4', 60)
@@ -25,8 +20,10 @@ recognition_time = time.time()
 print("Recognition time: {}".format(recognition_time - detection_time))
 
 for r_c in recognized_contours:
+    # to also use an image for georeferencing
     res_recognized, validated_contours = validate_smoke(
         frame, r_c, '../inputs/Nebel.jpg', True)
+    # to only detect smoke
     # res_recognized, validated_contours = validate_smoke(
     #     frame, r_c, next_frame, False)
     validation_time = time.time()
@@ -50,6 +47,7 @@ for r_c in recognized_contours:
             additional = time.time()
             print("Additions time: {}".format(additional - validation_time))
 
+            # Georeferencing part
             start_georeferencing("Nebel")
             first, second, bearings = get_bearing(
                 extremes_d, extremes_v, "Nebel")
