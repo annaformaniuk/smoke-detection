@@ -1,0 +1,1 @@
+cs2cs.exe +init=epsg:4326 +to +init=epsg:25832 < LB.txt > PC.txt

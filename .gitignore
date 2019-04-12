@@ -1,9 +1,6 @@
 .mypy_cache
-georef/
-outputs/
-inputs/
-snippets/
+.__pycache__
 *.jpg
 *.mp4
 *.jgw
-*.sav
+*.csv

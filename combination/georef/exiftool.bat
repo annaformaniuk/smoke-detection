@@ -1,0 +1,2 @@
+     exiftool.exe -c "%%+.10f degrees" *.JPG > exif_out.txt
+::     exiftool.exe -FileName -GPSLatitude -GPSLongitude -RelativeAltitude -GimbalRollDegree -GimbalYawDegree  -GimbalPitchDegree -DateTimeOriginal -ExposureTime -ISO -FNumber -ImageWidth -ImageHeight -Make *.JPG > exif_sel_out.txt

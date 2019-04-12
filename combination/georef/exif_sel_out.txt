@@ -1,0 +1,61 @@
+======== DJI_0800.JPG
+File Name                       : DJI_0800.JPG
+GPS Latitude                    : 51 deg 39' 58.52" N
+GPS Longitude                   : 7 deg 38' 5.99" E
+Relative Altitude               : +5.00
+Gimbal Roll Degree              : +0.00
+Gimbal Yaw Degree               : +47.10
+Gimbal Pitch Degree             : -13.90
+Date/Time Original              : 2018:12:11 10:13:08
+Exposure Time                   : 1/320
+ISO                             : 400
+F Number                        : 5.6
+Image Width                     : 5472
+Image Height                    : 3648
+Make                            : DJI
+======== DJI_0826.JPG
+File Name                       : DJI_0826.JPG
+GPS Latitude                    : 51 deg 39' 58.79" N
+GPS Longitude                   : 7 deg 38' 6.49" E
+Relative Altitude               : +25.30
+Gimbal Roll Degree              : +0.00
+Gimbal Yaw Degree               : -137.70
+Gimbal Pitch Degree             : -89.90
+Date/Time Original              : 2018:12:11 10:17:01
+Exposure Time                   : 1/160
+ISO                             : 400
+F Number                        : 4.5
+Image Width                     : 5472
+Image Height                    : 3648
+Make                            : DJI
+======== DJI_0836.JPG
+File Name                       : DJI_0836.JPG
+GPS Latitude                    : 51 deg 39' 58.78" N
+GPS Longitude                   : 7 deg 38' 6.49" E
+Relative Altitude               : +10.10
+Gimbal Roll Degree              : +0.00
+Gimbal Yaw Degree               : -137.60
+Gimbal Pitch Degree             : -90.00
+Date/Time Original              : 2018:12:11 10:17:28
+Exposure Time                   : 1/160
+ISO                             : 400
+F Number                        : 4.5
+Image Width                     : 5472
+Image Height                    : 3648
+Make                            : DJI
+======== DJI_0856.JPG
+File Name                       : DJI_0856.JPG
+GPS Latitude                    : 51 deg 39' 58.29" N
+GPS Longitude                   : 7 deg 38' 6.19" E
+Relative Altitude               : +10.50
+Gimbal Roll Degree              : +0.00
+Gimbal Yaw Degree               : +24.00
+Gimbal Pitch Degree             : -27.40
+Date/Time Original              : 2018:12:11 10:23:41
+Exposure Time                   : 1/160
+ISO                             : 400
+F Number                        : 4.5
+Image Width                     : 5472
+Image Height                    : 3648
+Make                            : DJI
+    4 image files read
