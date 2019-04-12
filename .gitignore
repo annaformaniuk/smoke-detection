@@ -4,3 +4,4 @@
 *.mp4
 *.jgw
 *.csv
+!inputs/DJI_0843_frame00064.jpg
