@@ -11,7 +11,6 @@ import json
 # exiftool.exe and cs2cs.exe must be installed
 # set PROJ_LIB= {{folder with epsg file}}
 # http://svn.osgeo.org/metacrs/proj/trunk/proj/nad/epsg
-# pyproj is faster than cs2cs?
 
 # create a new context for this task
 ctx = decimal.Context()

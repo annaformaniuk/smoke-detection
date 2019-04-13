@@ -14,6 +14,8 @@ Requirements
 - mahotas
 - matplotlib
 - scipy
+- exiftool
+- cs2cs
 - Keras
 
 License
